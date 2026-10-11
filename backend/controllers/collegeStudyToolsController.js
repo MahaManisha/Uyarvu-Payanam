@@ -1421,11 +1421,76 @@ How can I assist you with your coursework, interview preparation, or career goal
 exports.generateResumeSuggestions = async (req, res) => {
   try {
     const studentId = req.student?.id || req.student?._id;
-    const [user, profile] = await Promise.all([
+    const [user, gradProfile, collegeProfile, savedResumes] = await Promise.all([
       User.findById(studentId).select("name email phone").lean(),
-      CollegeStudentProfile.findOne({ userId: studentId }).lean()
+      GraduateProfile.findOne({ userId: studentId }).lean(),
+      CollegeStudentProfile.findOne({ userId: studentId }).lean(),
+      Resume.find({ userId: studentId }).sort({ updatedAt: -1 }).lean(),
     ]);
 
+    // Graduate portal users have a GraduateProfile, not a CollegeStudentProfile.
+    // Build the prefill from the correct model so graduate accounts get real data.
+    const isGraduate = req.student?.userType === "graduate" || (!collegeProfile && !!gradProfile);
+    if (isGraduate) {
+      const gp = gradProfile || {};
+      const gName = user?.name || req.student?.name || "Graduate Candidate";
+      const gSkills = Array.isArray(gp.technicalSkills) && gp.technicalSkills.length
+        ? gp.technicalSkills.map((s) => (typeof s === "string" ? s : s.name)).filter(Boolean)
+        : Array.isArray(gp.skills) ? gp.skills : [];
+      const gExperience = Array.isArray(gp.workExperience) && gp.workExperience.length
+        ? gp.workExperience
+        : Array.isArray(gp.experience) ? gp.experience : [];
+      const gInternships = Array.isArray(gp.internships) ? gp.internships : [];
+      const gProjects = Array.isArray(gp.projects) ? gp.projects : [];
+      const gCerts = Array.isArray(gp.certifications) ? gp.certifications : [];
+      const gCollege = gp.collegeName || gp.college || gp.universityName || gp.university || "";
+
+      const gMissing = [];
+      if (!gCollege) gMissing.push("College / University");
+      if (!(gp.cgpa || gp.percentage)) gMissing.push("Academic CGPA / Percentage");
+      if (!gSkills.length) gMissing.push("Technical Skills List");
+      if (!gProjects.length && !gExperience.length && !gInternships.length) gMissing.push("Projects / Experience");
+      if (!gCerts.length) gMissing.push("Industry Certifications");
+
+      let gScore = 40;
+      if (gCollege) gScore += 15;
+      if (gp.cgpa || gp.percentage) gScore += 10;
+      if (gSkills.length) gScore += 15;
+      if (gProjects.length || gExperience.length || gInternships.length) gScore += 15;
+      if (gCerts.length) gScore += 5;
+
+      const graduateResumeData = {
+        name: gName,
+        email: user?.email || req.student?.email || "",
+        phone: gp.phone || user?.phone || "",
+        location: gp.location || gp.state || "",
+        degree: gp.degree || "",
+        specialization: gp.specialization || gp.domain || "",
+        college: gCollege,
+        graduationYear: gp.graduationYear || "",
+        cgpa: gp.cgpa || "",
+        percentage: gp.percentage || "",
+        linkedin: gp.linkedinUrl || "",
+        github: gp.githubUrl || "",
+        portfolio: gp.portfolioUrl || "",
+        targetCareer: gp.targetCareer || (gp.careerInterests || [])[0] || "Software Engineer",
+        professionalSummary: "",
+        careerObjective: "",
+        highlightSkills: gSkills,
+        softSkills: Array.isArray(gp.softSkills) ? gp.softSkills : [],
+        suggestedProjects: gProjects,
+        internships: gInternships,
+        experience: gExperience,
+        certifications: gCerts,
+        achievements: [],
+        resumeStrengthScore: Math.min(100, gScore),
+        missingSectionsToImprove: gMissing,
+      };
+
+      return res.json({ success: true, resumeData: graduateResumeData, profile: gp, savedResumes });
+    }
+
+    const profile = collegeProfile;
     const studentName = user?.name || req.student?.name || "College Student";
     const email = user?.email || req.student?.email || "";
     const phone = profile?.phone || user?.phone || "";
@@ -1511,10 +1576,53 @@ exports.generateResumeSuggestions = async (req, res) => {
       missingSectionsToImprove: missingSections
     };
 
-    return res.json({ success: true, resumeData, profile });
+    return res.json({ success: true, resumeData, profile, savedResumes });
   } catch (err) {
     console.error("Generate resume suggestions error:", err);
     res.status(500).json({ success: false, message: "Failed to generate resume suggestions" });
+  }
+};
+
+// Flatten a resume document/object into plain text for ATS analysis.
+function buildResumeText(r) {
+  const p = r?.personalInfo || {};
+  const arr = (v) => (Array.isArray(v) ? v : []);
+  const certLine = (c) => (typeof c === "string" ? c : `${c?.name || ""} ${c?.issuer || ""}`);
+  const parts = [
+    p.fullName, p.email, p.phone, p.location, p.linkedin, p.github, p.portfolio,
+    r?.professionalSummary,
+    arr(r?.technicalSkills).join(" "),
+    arr(r?.softSkills).join(" "),
+    ...arr(r?.experience).map((e) => `${e.role || ""} ${e.company || ""} ${e.description || ""}`),
+    ...arr(r?.internships).map((e) => `${e.role || ""} ${e.company || ""} ${e.responsibilities || e.description || ""}`),
+    ...arr(r?.projects).map((e) => `${e.title || ""} ${e.techStack || ""} ${e.description || ""}`),
+    ...arr(r?.education).map((e) => `${e.degree || ""} ${e.specialization || ""} ${e.institution || ""} ${e.cgpaOrPercentage || ""}`),
+    ...arr(r?.certifications).map(certLine),
+    arr(r?.achievements).join(" "),
+    ...arr(r?.publications).map((x) => `${x.title || ""} ${x.publisher || ""} ${x.year || ""}`),
+    ...arr(r?.research).map((x) => `${x.title || ""} ${x.institution || ""} ${x.description || ""}`),
+    arr(r?.languages).join(" "),
+    ...arr(r?.customSections).map((s) => `${s.title || ""} ${s.content || ""}`),
+  ];
+  return parts.filter((x) => x && String(x).trim()).join("\n");
+}
+
+// POST /graduate/resume/analyze — inline ATS check for the resume builder.
+// Reuses the shared atsScannerEngine so the score matches the ATS checker page.
+exports.analyzeResumeJd = async (req, res) => {
+  try {
+    const { resume, jobDescription } = req.body || {};
+    if (!resume) return res.status(400).json({ success: false, message: "resume is required" });
+    const studentId = req.student?.id || req.student?._id;
+    const [gradProfile, collegeProfile] = await Promise.all([
+      GraduateProfile.findOne({ userId: studentId }).lean(),
+      CollegeStudentProfile.findOne({ userId: studentId }).lean(),
+    ]);
+    const analysis = analyzeResumeForAts(buildResumeText(resume), jobDescription || "", gradProfile || collegeProfile || {});
+    return res.json({ success: true, analysis });
+  } catch (err) {
+    console.error("Resume ATS analysis error:", err);
+    return res.status(500).json({ success: false, message: "Failed to analyze resume" });
   }
 };
 
@@ -2295,8 +2403,14 @@ exports.saveResumeVersion = async (req, res) => {
     if (data.targetRole) resumeDoc.targetRole = data.targetRole;
     if (data.targetCompany !== undefined) resumeDoc.targetCompany = data.targetCompany;
     if (data.targetCategory) resumeDoc.targetCategory = data.targetCategory;
+    if (data.jobDescription !== undefined) resumeDoc.jobDescription = data.jobDescription;
     if (data.template) resumeDoc.template = data.template;
-    if (data.personalInfo) resumeDoc.personalInfo = { ...resumeDoc.personalInfo, ...data.personalInfo };
+    if (data.personalInfo) {
+      const prevPersonal = resumeDoc.personalInfo
+        ? (resumeDoc.personalInfo.toObject ? resumeDoc.personalInfo.toObject() : resumeDoc.personalInfo)
+        : {};
+      resumeDoc.personalInfo = { ...prevPersonal, ...data.personalInfo };
+    }
     if (data.professionalSummary !== undefined) resumeDoc.professionalSummary = data.professionalSummary;
     if (Array.isArray(data.education)) resumeDoc.education = data.education;
     if (Array.isArray(data.technicalSkills)) resumeDoc.technicalSkills = data.technicalSkills;

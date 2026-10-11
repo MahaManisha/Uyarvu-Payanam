@@ -30,6 +30,10 @@ const resumeSchema = new mongoose.Schema(
       enum: ["JOB", "GOVERNMENT", "HIGHER_STUDIES", "RESEARCH", "INTERNSHIP"],
       default: "JOB"
     },
+    jobDescription: {
+      type: String,
+      default: ""
+    },
     template: {
       type: String,
       enum: [
@@ -55,7 +59,10 @@ const resumeSchema = new mongoose.Schema(
       percentage: { type: String, default: "" },
       linkedin: { type: String, default: "" },
       github: { type: String, default: "" },
-      portfolio: { type: String, default: "" }
+      portfolio: { type: String, default: "" },
+      // Optional profile photo stored as a small (client-resized) data URL so
+      // it travels with the resume version and embeds directly in the PDF.
+      photoUrl: { type: String, default: "" }
     },
     professionalSummary: {
       type: String,

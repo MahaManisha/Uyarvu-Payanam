@@ -39,6 +39,7 @@ const {
   getResumeVersions,
   deleteResumeVersion,
   generateAiSummary,
+  analyzeResumeJd,
   getAtsPresets,
   checkResumeAtsScore,
   getAtsHistory
@@ -151,6 +152,7 @@ router.get("/resume/versions", verifyStudent, getResumeVersions);
 router.post("/resume/save", verifyStudent, saveResumeVersion);
 router.delete("/resume/:id", verifyStudent, deleteResumeVersion);
 router.post("/resume/generate-summary", verifyStudent, generateAiSummary);
+router.post("/resume/analyze", verifyStudent, analyzeResumeJd);
 
 router.get("/ats-presets", verifyStudent, getAtsPresets);
 router.post("/ats-checker", verifyStudent, uploadResume.single("resumeFile"), checkResumeAtsScore);
