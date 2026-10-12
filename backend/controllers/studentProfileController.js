@@ -17,7 +17,11 @@ const StudentProfile = require("../models/StudentProfile");
 const { upsertStudentProfile, pickProfileFields } = require("../utils/studentProfileSync");
 
 // PUT-able User fields — already exist on the User model (no schema change).
-const USER_FIELDS = ["name", "classLevel", "district", "userType"];
+// NOTE: userType is intentionally NOT here. It is the account's authoritative
+// identity, set at registration and returned at login — a normal profile
+// update must never be able to change it. (The explicit school→college
+// transition lives in updateCurrentStudy, not in this generic endpoint.)
+const USER_FIELDS = ["name", "classLevel", "district"];
 
 // ── GET /api/student/profile ────────────────────────────────────────────────
 // Read-only. Returns { success, student, profile }. `student` is the verified

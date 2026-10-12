@@ -14,27 +14,33 @@ export function StudentAuthProvider({ children }) {
     const saved = localStorage.getItem('studentData')
     if (savedToken && saved) {
       try {
-        let parsed = JSON.parse(saved)
-        if (parsed?.email && (/(\.edu|\.ac)\.in$/i.test(parsed.email) || /@nec\.edu\.in$/i.test(parsed.email))) {
-          parsed.userType = 'college_student'
-        }
-        setStudent(parsed)
-        setToken(savedToken)
-        setIsAuthenticated(true)
+        const parsed = JSON.parse(saved)
+        // `userType` comes from the stored account — never re-classify it
+        // from the email domain here (a Graduate with a .edu address is
+        // still Graduate).
+        // A stored type that is missing or outside the enum means a stale
+        // session written by an older build — discard it and re-authenticate
+        // so the backend provides the authoritative identity.
+        const VALID_TYPES = ['school_student', 'college_student', 'graduate']
+        if (!parsed?.email || !VALID_TYPES.includes(parsed.userType)) {
+          localStorage.removeItem('studentToken')
+          localStorage.removeItem('studentData')
+        } else {
+          setStudent(parsed)
+          setToken(savedToken)
+          setIsAuthenticated(true)
 
-        // Background check to sync userType and academic state with database
-        axiosInstance.get('/student/profile')
-          .then(res => {
-            if (res.data?.success && res.data.student) {
-              const fresh = res.data.student
-              if (fresh?.email && (/(\.edu|\.ac)\.in$/i.test(fresh.email) || /@nec\.edu\.in$/i.test(fresh.email))) {
-                fresh.userType = 'college_student'
+          // Background check to sync userType and academic state with database
+          axiosInstance.get('/student/profile')
+            .then(res => {
+              if (res.data?.success && res.data.student) {
+                const fresh = res.data.student
+                localStorage.setItem('studentData', JSON.stringify(fresh))
+                setStudent(fresh)
               }
-              localStorage.setItem('studentData', JSON.stringify(fresh))
-              setStudent(fresh)
-            }
-          })
-          .catch(() => {})
+            })
+            .catch(() => {})
+        }
       } catch {
         localStorage.removeItem('studentToken')
         localStorage.removeItem('studentData')

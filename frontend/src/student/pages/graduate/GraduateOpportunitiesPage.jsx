@@ -6,10 +6,10 @@ import { FiBriefcase, FiSearch, FiExternalLink, FiFilter, FiCheckCircle } from '
 
 const CATEGORY_TABS = [
   { label: 'ALL', value: 'ALL' },
-  { label: 'GOVERNMENT', value: 'GOVERNMENT_EXAMS' },
+  { label: 'GOVERNMENT JOBS', value: 'GOVERNMENT_EXAMS' },
+  { label: 'PRIVATE JOBS', value: 'PRIVATE_JOBS' },
   { label: 'HIGHER STUDIES', value: 'HIGHER_STUDIES' },
   { label: 'PSU', value: 'PSU' },
-  { label: 'PRIVATE JOBS', value: 'PRIVATE_JOBS' },
   { label: 'RESEARCH', value: 'RESEARCH' },
   { label: 'ENTREPRENEURSHIP', value: 'ENTREPRENEURSHIP' }
 ]

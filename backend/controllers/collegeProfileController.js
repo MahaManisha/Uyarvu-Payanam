@@ -473,7 +473,7 @@ const getMyContext = async (req, res) => {
       name: user?.name || "Student",
       email: user?.email || "",
       phone: activeProfile.phone || user?.phone || "",
-      activeStage: user?.userType || "college_student",
+      activeStage: user?.userType || "school_student",
       academicJourney: user?.academicJourney || [],
       schoolProfile: schoolProfile ? {
         schoolName: schoolProfile.schoolName || "",

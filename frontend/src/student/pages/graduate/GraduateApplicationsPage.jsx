@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import graduateService from '../../../services/graduateService'
+import applicationService from '../../../services/applicationService'
 import { SCard, SBtn, SLoader, SBadge, SSelect } from '../../components/ui'
-import { FiCheckSquare, FiClock, FiExternalLink, FiBell, FiPlus } from 'react-icons/fi'
+import { FiCheckSquare, FiClock, FiExternalLink, FiBell, FiPlus, FiTrash2 } from 'react-icons/fi'
 
 const STATUS_OPTIONS = [
   'NOT_STARTED',
@@ -14,14 +15,27 @@ const STATUS_OPTIONS = [
   'REJECTED'
 ]
 
+const STATUSES = ['Interested', 'Planning to Apply', 'Applied', 'Exam / Interview Scheduled', 'Selected', 'Rejected']
+
 export default function GraduateApplicationsPage() {
   const navigate = useNavigate()
+
+  // Opportunity-linked applications (GraduateApplication model)
   const [applications, setApplications] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loadingOpp, setLoadingOpp] = useState(true)
+
+  // Manual / private-job tracker (ApplicationTracker model)
+  const [items, setItems] = useState([])
+  const [loadingItems, setLoadingItems] = useState(true)
+  const [statusFilter, setStatusFilter] = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ title: '', organization: '', location: '', status: 'Interested', notes: '' })
+
   const [error, setError] = useState('')
+  const loading = loadingOpp || loadingItems
 
   const fetchApplications = async () => {
-    setLoading(true)
+    setLoadingOpp(true)
     try {
       const res = await graduateService.getApplications()
       if (res?.success) {
@@ -33,14 +47,26 @@ export default function GraduateApplicationsPage() {
       console.warn('Fetch applications error:', err)
       setError('Could not connect to application tracker API.')
     } finally {
-      setLoading(false)
+      setLoadingOpp(false)
     }
   }
 
-  useEffect(() => {
-    fetchApplications()
-  }, [])
+  const load = async () => {
+    try {
+      setLoadingItems(true)
+      const res = await applicationService.list(statusFilter || undefined)
+      if (res.success) setItems(res.data || [])
+    } catch {
+      setError('Could not load your application tracker.')
+    } finally {
+      setLoadingItems(false)
+    }
+  }
 
+  useEffect(() => { fetchApplications() }, [])
+  useEffect(() => { load() }, [statusFilter])
+
+  /* ── Opportunity application actions ── */
   const handleStatusChange = async (appId, newStatus) => {
     try {
       const app = applications.find(a => a._id === appId)
@@ -77,6 +103,35 @@ export default function GraduateApplicationsPage() {
     }
   }
 
+  /* ── Manual / private-job tracker actions ── */
+  const update = async (id, patch) => {
+    try {
+      const res = await applicationService.update(id, patch)
+      if (res.success) setItems((prev) => prev.map((i) => (i._id === id ? { ...i, ...res.data } : i)))
+    } catch { setError('Update failed.') }
+  }
+
+  const remove = async (id) => {
+    try {
+      await applicationService.remove(id)
+      setItems((prev) => prev.filter((i) => i._id !== id))
+    } catch { setError('Delete failed.') }
+  }
+
+  const addPrivate = async (e) => {
+    e.preventDefault()
+    if (!form.title.trim()) return setError('Title is required.')
+    try {
+      const res = await applicationService.create({ ...form, contentType: 'PrivateJob' })
+      if (res.success) {
+        setItems((prev) => [res.data, ...prev])
+        setForm({ title: '', organization: '', location: '', status: 'Interested', notes: '' })
+        setShowForm(false)
+        setError('')
+      }
+    } catch { setError('Could not add the record.') }
+  }
+
   if (loading) {
     return (
       <div style={{ height: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
@@ -105,15 +160,45 @@ export default function GraduateApplicationsPage() {
           </p>
         </div>
 
-        <Link to="/graduate/opportunities">
-          <SBtn variant="primary" style={{ borderRadius: 12, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <FiPlus size={15} /> Find Opportunities
-          </SBtn>
-        </Link>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <Link to="/graduate/opportunities">
+            <SBtn variant="primary" style={{ borderRadius: 12, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <FiPlus size={15} /> Find Opportunities
+            </SBtn>
+          </Link>
+          <button
+            type="button"
+            onClick={() => setShowForm((s) => !s)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#2563eb', color: '#fff', border: 'none', borderRadius: 12, padding: '9px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+          >
+            <FiPlus size={14} /> Track a job manually
+          </button>
+        </div>
       </div>
 
+      {error && <div style={{ background: '#fee2e2', color: '#b91c1c', borderRadius: 10, padding: 12, marginBottom: 16 }}>{error}</div>}
+
+      {/* MANUAL / PRIVATE JOB FORM */}
+      {showForm && (
+        <form onSubmit={addPrivate} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 18, display: 'grid', gap: 10, marginBottom: 24 }}>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0f172a' }}>Track a private job manually</h3>
+          <input placeholder="Job title *" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} style={input} />
+          <input placeholder="Company / organization" value={form.organization} onChange={(e) => setForm({ ...form, organization: e.target.value })} style={input} />
+          <input placeholder="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} style={input} />
+          <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} style={input}>
+            {STATUSES.map((s) => <option key={s}>{s}</option>)}
+          </select>
+          <textarea placeholder="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} style={{ ...input, minHeight: 70 }} />
+          <button type="submit" style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 16px', fontWeight: 700, cursor: 'pointer' }}>Save record</button>
+        </form>
+      )}
+
+      {/* SECTION 1 — OPPORTUNITY APPLICATIONS */}
+      <h2 style={{ fontSize: 17, fontWeight: 900, color: 'var(--s-text)', margin: '0 0 14px' }}>
+        Opportunity Applications
+      </h2>
       {applications.length === 0 ? (
-        <SCard style={{ padding: 40, textAlign: 'center', borderRadius: 20 }}>
+        <SCard style={{ padding: 40, textAlign: 'center', borderRadius: 20, marginBottom: 28 }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>📝</div>
           <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--s-text)', margin: '0 0 8px' }}>
             No Applications Added Yet
@@ -126,7 +211,7 @@ export default function GraduateApplicationsPage() {
           </Link>
         </SCard>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 28 }}>
           {applications.map((app) => {
             const opp = app.opportunityId || {}
             const isApplied = app.status === 'APPLIED' || app.status === 'EXAM_COMPLETED' || app.status === 'SELECTED'
@@ -212,6 +297,51 @@ export default function GraduateApplicationsPage() {
         </div>
       )}
 
+      {/* SECTION 2 — MANUAL / PRIVATE JOB TRACKER */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 900, color: 'var(--s-text)', margin: 0 }}>
+          Manual & Private Job Tracker
+        </h2>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ ...input, maxWidth: 260 }}>
+          <option value="">All statuses</option>
+          {STATUSES.map((s) => <option key={s}>{s}</option>)}
+        </select>
+      </div>
+
+      {items.length === 0 ? (
+        <div style={{ background: '#fff', border: '1px dashed #e2e8f0', borderRadius: 16, padding: 40, textAlign: 'center', color: '#94a3b8' }}>
+          Nothing tracked manually yet. Add a private job or informal application above.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {items.map((item) => (
+            <div key={item._id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0f172a' }}>{item.title}</h3>
+                  <div style={{ fontSize: 12, color: '#64748b' }}>{[item.organization, item.location, item.contentType === 'PrivateJob' ? 'Private' : 'Government'].filter(Boolean).join(' · ')}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <select value={item.status} onChange={(e) => update(item._id, { status: e.target.value })} style={{ ...input, padding: '7px 10px', maxWidth: 220 }}>
+                    {STATUSES.map((s) => <option key={s}>{s}</option>)}
+                  </select>
+                  <button onClick={() => remove(item._id)} style={{ background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: 8, padding: '8px 10px', cursor: 'pointer' }}>
+                    <FiTrash2 size={13} />
+                  </button>
+                </div>
+              </div>
+              <textarea
+                defaultValue={item.notes || ''}
+                onBlur={(e) => { if (e.target.value !== (item.notes || '')) update(item._id, { notes: e.target.value }) }}
+                placeholder="Add notes… (saved when you click away)"
+                style={{ ...input, marginTop: 10, minHeight: 54 }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
+
+const input = { width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 13, boxSizing: 'border-box' }

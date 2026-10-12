@@ -12,6 +12,7 @@ const {
   createExam,
   updateExam,
   deleteExam,
+  syncCentralExams,
 } = require("../controllers/graduateExamController");
 const verifyAdmin = require("../middleware/verifyAdmin");
 
@@ -25,6 +26,14 @@ router.get("/organizations/:id", getOrganizationById);
 router.post("/organizations", verifyAdmin, createOrganization);
 router.put("/organizations/:id", verifyAdmin, updateOrganization);
 router.delete("/organizations/:id", verifyAdmin, deleteOrganization);
+
+/* ── Central Government sync (EasyShiksha source) ─────────────────────────── */
+
+// @route   POST /api/graduate-exams/central/sync  (admin; ?limit=N optional)
+//          Fetches Central-only exams from easyshiksha.com/govt-exam and
+//          upserts them idempotently. Returns {success, source, totalFound,
+//          created, updated, unchanged, failed, lastChecked, durationMs}.
+router.post("/central/sync", verifyAdmin, syncCentralExams);
 
 /* ── Exams ────────────────────────────────────────────────────────────────── */
 

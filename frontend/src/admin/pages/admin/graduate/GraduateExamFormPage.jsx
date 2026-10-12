@@ -6,6 +6,7 @@ import {
 import { graduateExamService } from '../../../../services/graduateExamService'
 
 const STATUS_OPTIONS = [
+  'TBA',
   'Upcoming',
   'Application Open',
   'Application Closed',

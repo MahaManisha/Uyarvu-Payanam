@@ -67,7 +67,7 @@ export default function ProfilePage() {
     classLevel:     student?.classLevel     || '10th',
     district:       student?.district       || '',
     careerInterest: student?.careerInterest || '',
-    userType:       student?.userType       || 'college_student',
+    userType:       student?.userType       || 'school_student',
   })
   const [saving,  setSaving]  = useState(false)
   const [success, setSuccess] = useState('')
@@ -104,7 +104,7 @@ export default function ProfilePage() {
       classLevel:     student?.classLevel     || '10th',
       district:       student?.district       || '',
       careerInterest: student?.careerInterest || '',
-      userType:       student?.userType       || 'college_student',
+      userType:       student?.userType       || 'school_student',
     })
     setEditing(false)
     setError('')

@@ -2,21 +2,19 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useStudentAuth } from '../../context/StudentAuthContext'
 import studentApi from '../../services/studentApi'
-import activityService from '../../services/activityService'
 import { userActionService } from '../../../services/userActionService'
 import { SBtn, SLoader, SSectionHeader, SEmpty, SBadge, SCard } from '../../components/ui'
 import {
   FiGrid, FiBookOpen, FiMapPin, FiFileText, FiAward,
   FiBell, FiUser, FiLogOut, FiArrowRight,
-  FiClock, FiMenu, FiX, FiMessageSquare,
+  FiClock, FiMenu, FiX,
 } from 'react-icons/fi'
 import s from './DashboardPage.module.css'
 import MentorRequestModal from '../../components/mentor/MentorRequestModal'
-import RecentActivityCard from '../../components/dashboard/RecentActivityCard'
 import onboardingService from '../../../services/onboardingService'
 import class5CommunicationService from '../../../services/class5CommunicationService'
 
-/* ── Sidebar navigation config ─────────────────────────────── */
+/* ΓöÇΓöÇ Sidebar navigation config ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 const SIDEBAR_NAV = [
   { id: 'dashboard',     icon: FiGrid,     label: 'Dashboard',      to: '/student/dashboard' },
   { id: 'bookmarks',     icon: FiAward,    label: 'My Bookmarks',   to: '/student/bookmarks' },
@@ -28,14 +26,14 @@ const SIDEBAR_NAV = [
   { id: 'profile',       icon: FiUser,     label: 'Profile',        to: '/student/profile' },
 ]
 
-/* Removed: stat card gradients (Phase 1K — green-on-white surface cards) */
+/* Removed: stat card gradients (Phase 1K ΓÇö green-on-white surface cards) */
 
-/* ── Recommended careers (static fallback & dynamic mapping) ──────── */
+/* ΓöÇΓöÇ Recommended careers (static fallback & dynamic mapping) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 const CAREER_CARDS = [
-  { icon: '⚙️', title: 'Engineering',  sub: 'Build the future',      bg: '#e0f2fe', color: '#0369a1' },
-  { icon: '🩺', title: 'Medicine',     sub: 'Heal & innovate',       bg: '#d1fae5', color: '#047857' },
-  { icon: '📊', title: 'Commerce',     sub: 'Business & finance',    bg: '#fef3c7', color: '#b45309' },
-  { icon: '🎨', title: 'Arts',         sub: 'Create & express',      bg: '#f1f5f9', color: '#475569' },
+  { icon: 'ΓÜÖ∩╕Å', title: 'Engineering',  sub: 'Build the future',      bg: '#e0f2fe', color: '#0369a1' },
+  { icon: '≡ƒ⌐║', title: 'Medicine',     sub: 'Heal & innovate',       bg: '#d1fae5', color: '#047857' },
+  { icon: '≡ƒôè', title: 'Commerce',     sub: 'Business & finance',    bg: '#fef3c7', color: '#b45309' },
+  { icon: '≡ƒÄ¿', title: 'Arts',         sub: 'Create & express',      bg: '#f1f5f9', color: '#475569' },
 ]
 
 /* Career-icon pastel pairs are kept to four families (blue/green/slate/gold)
@@ -48,35 +46,35 @@ const CAREER_CARDS_PAIRS = {
 }
 
 const CAREER_INFO_MAP = {
-  'Engineering': { icon: '⚙️', sub: 'Build the future', ...CAREER_CARDS_PAIRS.blue },
-  'IT': { icon: '💻', sub: 'Tech & Software', ...CAREER_CARDS_PAIRS.blue },
-  'Data Science': { icon: '📈', sub: 'Analytics & AI', ...CAREER_CARDS_PAIRS.blue },
-  'Polytechnic': { icon: '🔧', sub: 'Technical Skills', ...CAREER_CARDS_PAIRS.green },
-  'Medical': { icon: '🩺', sub: 'Heal & innovate', ...CAREER_CARDS_PAIRS.green },
-  'Nursing': { icon: '🏥', sub: 'Patient Care', ...CAREER_CARDS_PAIRS.green },
-  'Pharmacy': { icon: '💊', sub: 'Medicine expert', ...CAREER_CARDS_PAIRS.green },
-  'Agriculture': { icon: '🌱', sub: 'Farming & Science', ...CAREER_CARDS_PAIRS.green },
-  'Biotechnology': { icon: '🧬', sub: 'Bio & Tech', ...CAREER_CARDS_PAIRS.blue },
-  'Design': { icon: '🎨', sub: 'Create & express', ...CAREER_CARDS_PAIRS.slate },
-  'Media': { icon: '🎬', sub: 'Broadcast & Film', ...CAREER_CARDS_PAIRS.slate },
-  'Teaching': { icon: '👩‍🏫', sub: 'Educate the next gen', ...CAREER_CARDS_PAIRS.green },
-  'Journalism': { icon: '📰', sub: 'News & Writing', ...CAREER_CARDS_PAIRS.slate },
-  'Arts': { icon: '🎭', sub: 'Culture & Expression', ...CAREER_CARDS_PAIRS.slate },
-  'Commerce': { icon: '📊', sub: 'Business & finance', ...CAREER_CARDS_PAIRS.gold },
-  'CA': { icon: '🧮', sub: 'Accountancy', ...CAREER_CARDS_PAIRS.gold },
-  'B.Com': { icon: '💼', sub: 'Bachelor of Commerce', ...CAREER_CARDS_PAIRS.gold },
-  'Business': { icon: '🏢', sub: 'Enterprise', ...CAREER_CARDS_PAIRS.blue },
-  'Management': { icon: '👔', sub: 'Lead & organize', ...CAREER_CARDS_PAIRS.blue },
-  'Civil Services': { icon: '🏛️', sub: 'Public Administration', ...CAREER_CARDS_PAIRS.slate },
-  'Law': { icon: '⚖️', sub: 'Justice & Rights', ...CAREER_CARDS_PAIRS.slate },
-  'Public Administration': { icon: '📋', sub: 'Government operations', ...CAREER_CARDS_PAIRS.slate }
+  'Engineering': { icon: 'ΓÜÖ∩╕Å', sub: 'Build the future', ...CAREER_CARDS_PAIRS.blue },
+  'IT': { icon: '≡ƒÆ╗', sub: 'Tech & Software', ...CAREER_CARDS_PAIRS.blue },
+  'Data Science': { icon: '≡ƒôê', sub: 'Analytics & AI', ...CAREER_CARDS_PAIRS.blue },
+  'Polytechnic': { icon: '≡ƒöº', sub: 'Technical Skills', ...CAREER_CARDS_PAIRS.green },
+  'Medical': { icon: '≡ƒ⌐║', sub: 'Heal & innovate', ...CAREER_CARDS_PAIRS.green },
+  'Nursing': { icon: '≡ƒÅÑ', sub: 'Patient Care', ...CAREER_CARDS_PAIRS.green },
+  'Pharmacy': { icon: '≡ƒÆè', sub: 'Medicine expert', ...CAREER_CARDS_PAIRS.green },
+  'Agriculture': { icon: '≡ƒî▒', sub: 'Farming & Science', ...CAREER_CARDS_PAIRS.green },
+  'Biotechnology': { icon: '≡ƒº¼', sub: 'Bio & Tech', ...CAREER_CARDS_PAIRS.blue },
+  'Design': { icon: '≡ƒÄ¿', sub: 'Create & express', ...CAREER_CARDS_PAIRS.slate },
+  'Media': { icon: '≡ƒÄ¼', sub: 'Broadcast & Film', ...CAREER_CARDS_PAIRS.slate },
+  'Teaching': { icon: '≡ƒæ⌐ΓÇì≡ƒÅ½', sub: 'Educate the next gen', ...CAREER_CARDS_PAIRS.green },
+  'Journalism': { icon: '≡ƒô░', sub: 'News & Writing', ...CAREER_CARDS_PAIRS.slate },
+  'Arts': { icon: '≡ƒÄ¡', sub: 'Culture & Expression', ...CAREER_CARDS_PAIRS.slate },
+  'Commerce': { icon: '≡ƒôè', sub: 'Business & finance', ...CAREER_CARDS_PAIRS.gold },
+  'CA': { icon: '≡ƒº«', sub: 'Accountancy', ...CAREER_CARDS_PAIRS.gold },
+  'B.Com': { icon: '≡ƒÆ╝', sub: 'Bachelor of Commerce', ...CAREER_CARDS_PAIRS.gold },
+  'Business': { icon: '≡ƒÅó', sub: 'Enterprise', ...CAREER_CARDS_PAIRS.blue },
+  'Management': { icon: '≡ƒæö', sub: 'Lead & organize', ...CAREER_CARDS_PAIRS.blue },
+  'Civil Services': { icon: '≡ƒÅ¢∩╕Å', sub: 'Public Administration', ...CAREER_CARDS_PAIRS.slate },
+  'Law': { icon: 'ΓÜû∩╕Å', sub: 'Justice & Rights', ...CAREER_CARDS_PAIRS.slate },
+  'Public Administration': { icon: '≡ƒôï', sub: 'Government operations', ...CAREER_CARDS_PAIRS.slate }
 };
 
 const getDefaultCareerCard = (title) => ({
-  icon: '🎓', title, sub: 'Explore this path', ...CAREER_CARDS_PAIRS.slate
+  icon: '≡ƒÄô', title, sub: 'Explore this path', ...CAREER_CARDS_PAIRS.slate
 });
 
-/* ── TimeAgo helper ───────────────────────────────────────────── */
+/* ΓöÇΓöÇ TimeAgo helper ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 function timeAgo(date) {
   if (!date) return ''
   const diff = Date.now() - new Date(date).getTime()
@@ -89,13 +87,13 @@ function timeAgo(date) {
 }
 
 function formatDate(d) {
-  if (!d) return '—'
+  if (!d) return 'ΓÇö'
   return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-/* ────────────────────────────────────────────────────────────── 
+/* ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ 
    DASHBOARD PAGE
-   ────────────────────────────────────────────────────────────── */
+   ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 import { Navigate } from 'react-router-dom'
 
 export default function DashboardPage() {
@@ -120,7 +118,7 @@ export default function DashboardPage() {
     }).catch(err => console.error("Error fetching comm progress:", err));
   }, [student?._id, isClass5]);
 
-  /* ── Data state ────────────────────────────────────────────── */
+  /* ΓöÇΓöÇ Data state ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [exams, setExams] = useState([])
@@ -135,19 +133,15 @@ export default function DashboardPage() {
   const [summaryStudent, setSummaryStudent] = useState(null)
   const [retaking, setRetaking] = useState(false)
 
-  /* ── Fetch dashboard summary on mount — single API ─────────── */
+  /* ΓöÇΓöÇ Fetch dashboard summary on mount ΓÇö single API ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
   useEffect(() => {
-    // Phase 6B — one call replaces the nine parallel requests (notifications,
+    // Phase 6B ΓÇö one call replaces the nine parallel requests (notifications,
     // careers, exams, scholarships, courses, colleges, saved items, mentor
     // requests, legacy recommendation). Identity is supplied by the axios
-    // auth interceptor (Bearer token) — no userId/studentId is sent.
+    // auth interceptor (Bearer token) ΓÇö no userId/studentId is sent.
     // Sections are read directly from the summary shape, NOT through the old
     // normalize() helper (which cannot see sections.notifications.items).
-    // studentApi baseURL already ends in /api (see services/studentApi.js), so
-    // this path must be written relative to it — it resolves to
-    // /api/student/dashboard-summary, the mount used in backend/server.js.
-    // (sibling student calls such as /student/profile follow the same shape.)
-    studentApi.get('/student/dashboard-summary')
+    studentApi.get('/dashboard-summary')
       .then((res) => {
         const summary = res.data
         try {
@@ -161,7 +155,7 @@ export default function DashboardPage() {
 
           setScholarships(Array.isArray(sections.scholarships) ? sections.scholarships.slice(0, 3) : [])
 
-          // Stats are the server-computed counts — do NOT reconstruct them
+          // Stats are the server-computed counts ΓÇö do NOT reconstruct them
           // from the section arrays (those are capped display lists, while
           // the stats are true class-aware counts).
           setStats({
@@ -179,7 +173,7 @@ export default function DashboardPage() {
             setMentorRequests(sections.mentorRequests)
           }
 
-          // Fresh student snapshot — verifyStudent refetches the user per
+          // Fresh student snapshot ΓÇö verifyStudent refetches the user per
           // request, so this is newer than the context login snapshot.
           if (summary?.student) {
             setSummaryStudent(summary.student)
@@ -202,7 +196,7 @@ export default function DashboardPage() {
               const mappedSkills = skills.map(s => ({
                 title: s.title,
                 sub: s.category || 'Skill',
-                icon: '🚀',
+                icon: '≡ƒÜÇ',
                 bg: '#e0f2fe',
                 color: '#0369a1',
                 link: `/student/career-path/class-5/${s.slug}`
@@ -226,7 +220,7 @@ export default function DashboardPage() {
         }
       })
       .catch((err) => {
-        // e.g. network failure — keep the page usable with the empty
+        // e.g. network failure ΓÇö keep the page usable with the empty
         // fallbacks. A 401 is handled by the studentApi interceptor, which
         // clears the token and redirects to sign-in.
         console.error("Error fetching dashboard summary:", err)
@@ -234,7 +228,7 @@ export default function DashboardPage() {
       })
   }, [student?._id])
 
-  /* ── Derived ───────────────────────────────────────────────── */
+  /* ΓöÇΓöÇ Derived ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
   // Prefer the fresh summary student snapshot; fall back to the context
   // login snapshot so the page still renders if the summary student is ever
   // absent. The summary student is refetched server-side per request.
@@ -277,18 +271,18 @@ export default function DashboardPage() {
     }
   }
 
-  /* ── Stat card data ────────────────────────────────────────── */
+  /* ΓöÇΓöÇ Stat card data ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
   const STAT_CARDS = [
-    { icon: <FiBookOpen size={20} />, label: 'Courses Available', value: stats.courses },
-    { icon: <FiFileText size={20} />, label: 'Entrance Exams', value: stats.exams },
-    { icon: <FiAward size={20} />, label: 'Scholarships', value: stats.scholarships },
-    { icon: <FiMapPin size={20} />, label: 'Colleges', value: stats.colleges },
+    { icon: '≡ƒôÜ', label: 'Courses Available', value: stats.courses },
+    { icon: '≡ƒô¥', label: 'Entrance Exams', value: stats.exams },
+    { icon: '≡ƒÄô', label: 'Scholarships', value: stats.scholarships },
+    { icon: '≡ƒÅ½', label: 'Colleges', value: stats.colleges },
   ]
 
   return (
     <div className={s.layout}>
 
-      {/* ── SIDEBAR ─────────────────────────────────────────── */}
+      {/* ΓöÇΓöÇ SIDEBAR ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
       {sidebarOpen && <div className={s.overlay} onClick={() => setSidebarOpen(false)} />}
 
       <aside className={`${s.sidebar} ${sidebarOpen ? s.sidebarOpen : ''}`}>
@@ -351,7 +345,7 @@ export default function DashboardPage() {
         {sidebarOpen ? <FiX /> : <FiMenu />}
       </button>
 
-      {/* ── MAIN CONTENT ────────────────────────────────────── */}
+      {/* ΓöÇΓöÇ MAIN CONTENT ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
       <div className={s.main}>
 
         {/* Welcome Banner */}
@@ -378,15 +372,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Two-column dashboard: existing content + Recent Activity rail.
-            Collapses to a single column (card below content) on tablet/mobile. */}
-        <div className={s.dashGrid}>
-          <div className={s.dashMain}>
         {loading ? (
           <SLoader />
         ) : (
           <>
-            {/* ── Statistics Cards ────────────────────────────────── */}
+            {/* ΓöÇΓöÇ Statistics Cards ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
             <div className={`${s.statsGrid} s-anim-up s-d1`}>
               {STAT_CARDS.filter(stat => {
                 const isVeryJunior = ['5', '8', '5th', '8th'].includes(String(viewStudent?.classLevel));
@@ -404,24 +394,16 @@ export default function DashboardPage() {
               ))}
             </div>
 
-            {/* ── My Skill Recommendation (Class 5, 8, 10, 12) ─────────── */}
+            {/* ΓöÇΓöÇ My Skill Recommendation (Class 5, 8, 10, 12) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
             {(['5', '5th', 'Class 5', '8', '8th', 'Class 8', '10', '10th', 'Class 10', '12', '12th', 'Class 12'].includes(String(viewStudent?.classLevel))) && recommendation && (
-              <div className="s-anim-up s-d2" style={{ marginBottom: 44 }}>
+              <div className="s-anim-up s-d2" style={{ marginBottom: 32 }}>
                 <SSectionHeader
                   title="My Personalized Recommendation"
                   subtitle="Detailed analysis based on your assessment and interests"
-                  action={() => {
-                    activityService.record({
-                      type: 'recommendation_viewed',
-                      title: 'Viewed Recommendation',
-                      description: 'Personalized career recommendation',
-                      metadata: { entityId: 'career-assessment', link: '/student/onboarding/result' },
-                    })
-                    navigate('/student/onboarding/result')
-                  }}
+                  action={() => navigate('/student/onboarding/result')}
                   actionLabel="View Full Result"
                 />
-                <SCard style={{ padding: 0, borderRadius: 20, overflow: 'hidden', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+                <SCard style={{ padding: 0, borderRadius: 24, overflow: 'hidden', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
                   <div style={{ 
                     background: 'linear-gradient(135deg, #1a7a50 0%, #2d9d6a 100%)',
                     padding: '32px 40px', color: '#fff'
@@ -433,15 +415,7 @@ export default function DashboardPage() {
                         <div style={{ marginTop: 8 }}><SBadge color="white" style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}>{recommendation.performanceLevel}</SBadge></div>
                       </div>
                       <div style={{ display: 'flex', gap: 12 }}>
-                        <SBtn variant="white" onClick={() => {
-                          activityService.record({
-                            type: 'recommendation_viewed',
-                            title: 'Viewed Recommendation',
-                            description: 'Personalized career recommendation',
-                            metadata: { entityId: 'career-assessment', link: '/student/onboarding/result' },
-                          })
-                          navigate('/student/onboarding/result')
-                        }} style={{ borderRadius: 14, fontWeight: 700 }}>
+                        <SBtn variant="white" onClick={() => navigate('/student/onboarding/result')} style={{ borderRadius: 14, fontWeight: 700 }}>
                           View Full Details <FiArrowRight style={{ marginLeft: 8 }} />
                         </SBtn>
                       </div>
@@ -518,27 +492,27 @@ export default function DashboardPage() {
             )}
 
             {isClass5 && commProgress && (
-              <div className="s-anim-up s-d2" style={{ marginBottom: 44 }}>
+              <div className="s-anim-up s-d2" style={{ marginBottom: 32 }}>
                 <SSectionHeader
                   title="My Skill Journey"
                   subtitle="Track your real-time communication skills and achievements"
                   action={() => navigate('/student/class5/skills/communicationskills')}
                   actionLabel="Go to Interactive Lab"
                 />
-                <SCard style={{ padding: 32, borderRadius: 20, background: '#fff', border: '1px solid #f1f5f9', boxShadow: '0 10px 30px rgba(0,0,0,0.03)' }}>
+                <SCard style={{ padding: 32, borderRadius: 24, background: '#fff', border: '1px solid #f1f5f9', boxShadow: '0 10px 30px rgba(0,0,0,0.03)' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 32 }} className="s-grid-1col">
                     <div>
                       <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 24 }}>
                         <div style={{ padding: '16px 20px', background: '#eff6ff', borderRadius: 18, border: '1px solid #bfdbfe', flex: 1, minWidth: 140 }}>
-                          <span style={{ fontSize: 12, fontWeight: 800, color: '#2563eb', textTransform: 'uppercase', letterSpacing: 1, display: 'block', marginBottom: 4 }}>Communication Level</span>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: '#2563eb', textTransform: 'uppercase', letterSpacing: 1, display: 'block', marginBottom: 4 }}>Communication Level</span>
                           <strong style={{ fontSize: 20, color: '#1e3a8a' }}>Level {commProgress.progress?.level || 1}</strong>
                         </div>
                         <div style={{ padding: '16px 20px', background: '#f0fdf4', borderRadius: 18, border: '1px solid #bbf7d0', flex: 1, minWidth: 140 }}>
-                          <span style={{ fontSize: 12, fontWeight: 800, color: '#16a34a', textTransform: 'uppercase', letterSpacing: 1, display: 'block', marginBottom: 4 }}>Total XP Earned</span>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: '#16a34a', textTransform: 'uppercase', letterSpacing: 1, display: 'block', marginBottom: 4 }}>Total XP Earned</span>
                           <strong style={{ fontSize: 20, color: '#14532d' }}>{commProgress.progress?.xp || 0} XP</strong>
                         </div>
                         <div style={{ padding: '16px 20px', background: '#fff7ed', borderRadius: 18, border: '1px solid #ffedd5', flex: 1, minWidth: 140 }}>
-                          <span style={{ fontSize: 12, fontWeight: 800, color: '#ea580c', textTransform: 'uppercase', letterSpacing: 1, display: 'block', marginBottom: 4 }}>Current Streak</span>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: '#ea580c', textTransform: 'uppercase', letterSpacing: 1, display: 'block', marginBottom: 4 }}>Current Streak</span>
                           <strong style={{ fontSize: 20, color: '#7c2d12' }}>{commProgress.progress?.streak || 0} Days</strong>
                         </div>
                       </div>
@@ -573,8 +547,8 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* ── Recommended Resources ─────────────────────────────── */}
-            <div className="s-anim-up s-d2" style={{ marginBottom: 44 }}>
+            {/* ΓöÇΓöÇ Recommended Resources ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+            <div className="s-anim-up s-d2" style={{ marginBottom: 28 }}>
               <SSectionHeader
                 title={ (['5', '5th', 'Class 5', '8', '8th', 'Class 8', '10', '10th', 'Class 10', '12', '12th', 'Class 12'].includes(String(viewStudent?.classLevel))) ? `Recommended for Class ${viewStudent?.classLevel?.replace(/\D/g, '')}` : "Recommended Careers" }
                 subtitle={ (['5', '5th', 'Class 5', '8', '8th', 'Class 8', '10', '10th', 'Class 10', '12', '12th', 'Class 12'].includes(String(viewStudent?.classLevel))) ? "Based on your assessment results." : "Explore popular career paths tailored for your future." }
@@ -594,14 +568,14 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* ── Saved Resources ─────────────────────────────── */}
-            <div id="saved" className="s-anim-up s-d2" style={{ marginBottom: 44 }}>
+            {/* ΓöÇΓöÇ Saved Resources ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+            <div id="saved" className="s-anim-up s-d2" style={{ marginBottom: 28 }}>
               <SSectionHeader
                 title="Saved Resources"
                 subtitle="Your bookmarked careers, exams, and scholarships"
               />
               {savedGuidance.length === 0 ? (
-                <SEmpty icon={<FiAward size={48} />} title="No saved resources yet" desc="Bookmark items to keep track of your career journey." />
+                <SEmpty icon="≡ƒöû" title="No saved resources yet" desc="Bookmark items to keep track of your career journey." />
               ) : (
                 <div className={s.savedGrid}>
                   {savedGuidance.map((item, i) => {
@@ -649,8 +623,8 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* ── My Guidance Requests ─────────────────────────────── */}
-            <div className="s-anim-up s-d2" style={{ marginBottom: 44 }}>
+            {/* ΓöÇΓöÇ My Guidance Requests ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+            <div className="s-anim-up s-d2" style={{ marginBottom: 28 }}>
               <SSectionHeader
                 title="My Guidance Requests"
                 subtitle="Track your interactions with our mentors"
@@ -658,7 +632,7 @@ export default function DashboardPage() {
                 actionLabel="Request New Guidance"
               />
               {mentorRequests.length === 0 ? (
-                <SEmpty icon={<FiMessageSquare size={48} />} title="No requests yet" desc="Need help? Talk to our mentors today." />
+                <SEmpty icon="≡ƒùú∩╕Å" title="No requests yet" desc="Need help? Talk to our mentors today." />
               ) : (
                 <div className={s.mentorGrid}>
                   {mentorRequests.map((req) => (
@@ -688,7 +662,7 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* ── 2-Column: Upcoming Exams + Latest Scholarships ── */}
+            {/* ΓöÇΓöÇ 2-Column: Upcoming Exams + Latest Scholarships ΓöÇΓöÇ */}
             <div className={`${s.sectionGrid} s-anim-up s-d3`}>
 
               {/* Upcoming Exams */}
@@ -698,7 +672,7 @@ export default function DashboardPage() {
                   subtitle="Important entrance exams and their deadlines."
                 />
                 {exams.length === 0 ? (
-                  <SEmpty icon={<FiFileText size={48} />} title="No exams listed yet" />
+                  <SEmpty icon="≡ƒô¥" title="No exams listed yet" />
                 ) : (
                   <div className={s.examList}>
                     {exams.map((exam, i) => {
@@ -710,7 +684,7 @@ export default function DashboardPage() {
                             className={s.examIcon}
                             style={{ background: colors[i % 4], color: textColors[i % 4] }}
                           >
-                            📝
+                            ≡ƒô¥
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div className={s.examTitle}>{exam.name || exam.title || 'Exam'}</div>
@@ -733,7 +707,7 @@ export default function DashboardPage() {
                   subtitle="Don't miss these deadlines"
                 />
                 {scholarships.length === 0 ? (
-                  <SEmpty icon={<FiAward size={48} />} title="No scholarships yet" />
+                  <SEmpty icon="≡ƒÄô" title="No scholarships yet" />
                 ) : (
                   <div className={s.scholarshipList}>
                     {scholarships.map((sch, i) => (
@@ -757,8 +731,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* ── Notifications Preview ──────────────────────────────── */}
-            <div className="s-anim-up s-d4" style={{ marginBottom: 44 }}>
+            {/* ΓöÇΓöÇ Notifications Preview ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+            <div className="s-anim-up s-d4" style={{ marginBottom: 28 }}>
               <SSectionHeader
                 title="Notifications"
                 subtitle="Latest 3 updates from admin"
@@ -766,7 +740,7 @@ export default function DashboardPage() {
                 actionLabel="View All"
               />
               {notifications.length === 0 ? (
-                <SEmpty icon={<FiBell size={48} />} title="No notifications yet" desc="Admin updates will appear here" />
+                <SEmpty icon="≡ƒöö" title="No notifications yet" desc="Admin updates will appear here" />
               ) : (
                 <div className={s.notifList}>
                   {notifications.map((n, i) => (
@@ -779,7 +753,7 @@ export default function DashboardPage() {
                         {!n.isRead && <span className={s.notifDot} />}
                       </div>
                       <div className={s.notifMsg}>
-                        {n.message?.substring(0, 120)}{n.message?.length > 120 ? '…' : ''}
+                        {n.message?.substring(0, 120)}{n.message?.length > 120 ? 'ΓÇª' : ''}
                       </div>
                       <div className={s.notifTime}>{timeAgo(n.createdAt)}</div>
                     </div>
@@ -794,12 +768,6 @@ export default function DashboardPage() {
             </div>
           </>
         )}
-          </div>
-
-          <aside className={s.dashSide}>
-            <RecentActivityCard />
-          </aside>
-        </div>
       </div>
 
       <MentorRequestModal 

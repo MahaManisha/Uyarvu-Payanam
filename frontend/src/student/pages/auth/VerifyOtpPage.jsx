@@ -70,10 +70,10 @@ export default function VerifyOtpPage() {
       login(res.data.token, res.data.student)
       // Fresh/unverified accounts that just verified their email should land on
       // onboarding, not the dashboard.
-      const isCollege = s?.userType === 'college_student' || String(s?.classLevel || '').toLowerCase().includes('college') || /(\.edu|\.ac)\.in$/i.test(s?.email || '') || /@nec\.edu\.in$/i.test(s?.email || '')
-      const isGraduate = s?.userType === 'graduate' && !isCollege
+      const isCollege = s?.userType === 'college_student'
+      const isGraduate = s?.userType === 'graduate'
 
-      const dest = isCollege ? '/college/dashboard' : (s?.onboardingCompleted === false ? (isGraduate ? '/student/onboarding/graduate' : '/student/onboarding') : (isGraduate ? '/graduate/dashboard' : from))
+      const dest = isCollege ? '/college/dashboard' : (s?.onboardingCompleted === false ? (isGraduate ? '/student/onboarding/graduate' : '/student/onboarding') : (isGraduate ? '/student/graduate/dashboard' : from))
       navigate(dest, { replace: true })
     } catch (err) {
       const msg = err.response?.data?.message || 'Verification failed. Please try again.'

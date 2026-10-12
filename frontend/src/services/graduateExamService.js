@@ -49,4 +49,13 @@ export const graduateExamService = {
     const response = await axiosInstance.delete(`/graduate-exams/${id}`)
     return response.data
   },
+  /**
+   * Run the Central Government sync (admin only). Fetches Central-only exams
+   * from the EasyShiksha source and upserts them idempotently, returning
+   * {success, source, totalFound, created, updated, unchanged, failed, lastChecked}.
+   */
+  syncCentralExams: async (params = {}) => {
+    const response = await axiosInstance.post('/graduate-exams/central/sync', {}, { params })
+    return response.data
+  },
 }

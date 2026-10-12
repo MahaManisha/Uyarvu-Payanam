@@ -2,27 +2,27 @@ import React, { useState } from 'react'
 import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { useStudentAuth } from '../context/StudentAuthContext'
 import {
-  FiGrid, FiUser, FiCompass, FiBriefcase, FiAward,
+  FiGrid, FiUser, FiAward,
   FiBook, FiCheckSquare, FiCalendar, FiUsers, FiMessageSquare,
-  FiBell, FiSettings, FiLogOut, FiMenu, FiX, FiTarget, FiTrendingUp, FiFileText
+  FiBell, FiSettings, FiLogOut, FiMenu, FiX, FiTarget, FiTrendingUp, FiFileText,
+  FiZap
 } from 'react-icons/fi'
 
 const GRADUATE_SIDEBAR_NAV = [
-  { id: 'dashboard',        icon: FiGrid,          label: 'Dashboard',          to: '/graduate/dashboard' },
-  { id: 'profile',          icon: FiUser,          label: 'My Profile',         to: '/graduate/profile' },
-  { id: 'resume-builder',   icon: FiFileText,      label: 'Resume Builder',     to: '/graduate/resume-builder' },
-  { id: 'ats-checker',      icon: FiTrendingUp,    label: 'ATS Score Checker',  to: '/graduate/ats-checker' },
-  { id: 'opportunities',    icon: FiCompass,       label: 'Opportunities',      to: '/graduate/opportunities' },
-  { id: 'government-exams', icon: FiBook,          label: 'Government Exams',  to: '/graduate/government-exams' },
-  { id: 'higher-studies',   icon: FiAward,         label: 'Higher Studies',     to: '/graduate/higher-studies' },
-  { id: 'careers',          icon: FiBriefcase,     label: 'Jobs & Careers',     to: '/graduate/careers' },
-  { id: 'psu',              icon: FiBriefcase,     label: 'PSU Opportunities',  to: '/graduate/opportunities?category=PSU' },
-  { id: 'upcoming-exams',   icon: FiCalendar,      label: 'Upcoming Exams',     to: '/graduate/upcoming-exams' },
-  { id: 'applications',     icon: FiCheckSquare,   label: 'My Applications',    to: '/graduate/applications' },
-  { id: 'roadmap',          icon: FiTarget,        label: 'Preparation Roadmap', to: '/graduate/roadmap' },
-  { id: 'peer-mentor',      icon: FiUsers,         label: 'Peer Mentorship',    to: '/graduate/peer-mentor' },
-  { id: 'advisor',          icon: FiMessageSquare, label: 'AI Career Advisor',  to: '/graduate/advisor' },
-  { id: 'notifications',    icon: FiBell,          label: 'Notifications',      to: '/student/notifications' }
+  { id: 'dashboard',        icon: FiGrid,          label: 'Dashboard',           to: '/student/graduate/dashboard' },
+  { id: 'exams',            icon: FiBook,          label: 'Government Exams',    to: '/student/graduate/exams' },
+  { id: 'upcoming-exams',   icon: FiCalendar,      label: 'Upcoming Exams',      to: '/graduate/upcoming-exams' },
+  { id: 'placement',        icon: FiCheckSquare,   label: 'Private Jobs',        to: '/student/graduate/placement' },
+  { id: 'saved',            icon: FiFileText,      label: 'Saved Opportunities', to: '/student/graduate/saved' },
+  { id: 'applications',     icon: FiTarget,        label: 'My Applications',     to: '/student/graduate/applications' },
+  { id: 'resume-builder',   icon: FiFileText,      label: 'Resume Builder',      to: '/graduate/resume-builder' },
+  { id: 'ats-checker',      icon: FiTrendingUp,    label: 'ATS Score Checker',   to: '/graduate/ats-checker' },
+  { id: 'roadmap',          icon: FiTarget,        label: 'Career Roadmap',      to: '/student/graduate/roadmap' },
+  { id: 'higher-studies',   icon: FiAward,         label: 'Higher Studies',     to: '/student/graduate/higher-studies' },
+  { id: 'peer-mentor',      icon: FiUsers,         label: 'Peer Mentorship',     to: '/graduate/peer-mentor' },
+  { id: 'advisor',          icon: FiMessageSquare, label: 'AI Advisor',          to: '/student/graduate/advisor' },
+  { id: 'profile',          icon: FiUser,          label: 'My Profile',          to: '/student/graduate/profile' },
+  { id: 'notifications',    icon: FiZap,           label: 'Notifications',       to: '/student/graduate/notifications' },
 ]
 
 export default function GraduateLayout() {
@@ -58,7 +58,7 @@ export default function GraduateLayout() {
 
         {/* Logo */}
         <div style={{ padding: '22px 20px 18px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <Link to="/graduate/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link to="/student/graduate/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
               width: 38, height: 38, borderRadius: 12,
               background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
@@ -81,7 +81,8 @@ export default function GraduateLayout() {
         {/* Nav Items */}
         <nav style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 3, overflowY: 'auto' }}>
           {GRADUATE_SIDEBAR_NAV.map(({ id, icon: Icon, label, to }) => {
-            const isActive = location.pathname === to || (to !== '/graduate/dashboard' && location.pathname.startsWith(to.split('?')[0]))
+            const isActive = location.pathname === to.split('?')[0] ||
+              (to !== '/student/graduate/dashboard' && location.pathname.startsWith(to.split('?')[0]))
             return (
               <Link
                 key={id}

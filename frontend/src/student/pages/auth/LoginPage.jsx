@@ -12,7 +12,7 @@ const PENDING_EMAIL_KEY = 'pendingSigninEmail'
 const PENDING_FROM_KEY  = 'pendingSigninFrom'
 
 export default function LoginPage() {
-  const { student, login, isAuthenticated } = useStudentAuth()
+  const { login, isAuthenticated, student } = useStudentAuth()
   const navigate   = useNavigate()
   const location   = useLocation()
   let from       = location.state?.from?.pathname || '/student/dashboard'
@@ -21,10 +21,19 @@ export default function LoginPage() {
   // Already signed in? Go straight to the student's dashboard.
   React.useEffect(() => {
     if (isAuthenticated && student) {
-      const isCollege = student.userType === 'college_student' || String(student.classLevel || '').toLowerCase().includes('college') || /(\.edu|\.ac)\.in$/i.test(student.email || '') || /@nec\.edu\.in$/i.test(student.email || '')
-      const isGraduate = student.userType === 'graduate' && !isCollege
-      const target = isCollege ? '/college/dashboard' : isGraduate ? '/graduate/dashboard' : from
-      navigate(target, { replace: true })
+      // Identify the authenticated account by its STORED student type —
+      // never by the email domain or classLevel.
+      const isCollege = student?.userType === 'college_student'
+      const isGraduate = student?.userType === 'graduate'
+      let dest = from
+      if (from === '/student/dashboard') {
+        // Route each user type to its own portal, not a generic dashboard.
+        dest = isCollege ? '/college/dashboard'
+             : isGraduate && student?.onboardingCompleted !== false ? '/student/graduate/dashboard'
+             : isGraduate ? '/student/onboarding/graduate'
+             : '/student/dashboard'
+      }
+      navigate(dest, { replace: true })
     }
   }, [isAuthenticated, student, navigate, from])
 
@@ -55,12 +64,20 @@ export default function LoginPage() {
     setApiError('')
     try {
       const res = await axiosInstance.post('/students/login', form)
+      localStorage.setItem('studentToken', res.data.token)
+      login(res.data.token, res.data.student)
       const s = res.data.student
-      login(res.data.token, s)
-      const isCollege = s?.userType === 'college_student' || String(s?.classLevel || '').toLowerCase().includes('college') || /(\.edu|\.ac)\.in$/i.test(s?.email || '') || /@nec\.edu\.in$/i.test(s?.email || '')
-      const isGraduate = s?.userType === 'graduate' && !isCollege
-      const target = isCollege ? '/college/dashboard' : isGraduate ? '/graduate/dashboard' : from
-      navigate(target, { replace: true })
+      const isCollege = s?.userType === 'college_student'
+      const isGraduate = s?.userType === 'graduate'
+      let dest = from
+      if (from === '/student/dashboard') {
+        // Route each user type to its own portal, not a generic dashboard.
+        dest = isCollege ? '/college/dashboard'
+             : isGraduate && s?.onboardingCompleted !== false ? '/student/graduate/dashboard'
+             : isGraduate ? '/student/onboarding/graduate'
+             : '/student/dashboard'
+      }
+      navigate(dest, { replace: true })
     } catch (err) {
       // Account exists but the email isn't verified yet — continue the sign-up
       // flow: send a fresh signup code and move to the OTP verification screen.

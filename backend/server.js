@@ -342,6 +342,11 @@ app.use("/api/communication-content", require("./routes/communicationContentRout
 // Graduate career portal (profile, onboarding, dashboard, careers, exams,
 // higher-studies, roadmap, AI advisor) — userType "graduate" portal.
 app.use("/api/graduate", require("./routes/graduateRoutes"));
+app.use("/api/applications", require("./routes/applicationRoutes"));
+app.use("/api/graduate", require("./routes/resumeRoutes"));
+
+// Higher Studies module (admin CRUD + public read APIs)
+app.use("/api/higher-studies", require("./routes/higherStudiesRoutes"));
 
 // Class 5 career-discovery feature (Discover Me, Skill Quests, Squad, Real World, Trophy Room)
 // Note: endpoints live under /api/class5/* so the existing /api/scholarships service stays untouched.

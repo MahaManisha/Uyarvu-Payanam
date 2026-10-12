@@ -32,7 +32,7 @@ const connectDB = async () => {
     try {
       console.log("Connecting to MongoDB...");
       await mongoose.connect(primaryUri, {
-        serverSelectionTimeoutMS: 5000,
+        serverSelectionTimeoutMS: 30000,
         socketTimeoutMS: 45000
       });
       console.log(`MongoDB Connected (Primary): ${primaryUri.split("@")[1] || primaryUri}`);

@@ -2,20 +2,48 @@ const mongoose = require("mongoose");
 const RecruitmentOrganization = require("../models/RecruitmentOrganization");
 const GraduateExam = require("../models/GraduateExam");
 const slugify = require("../utils/slugify");
+const {
+  syncCentralExams: runCentralSync,
+  SourceFetchError,
+} = require("../services/easyShikshaExamService");
+
+const VALID_STATUSES = [
+  "",
+  "TBA",
+  "Upcoming",
+  "Application Open",
+  "Application Closed",
+  "Exam Scheduled",
+  "Result Released",
+  "Archived",
+];
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Validation helpers
    ───────────────────────────────────────────────────────────────────────────── */
 
-const isHttpUrl = (value) =>
-  !value || /^https?:\/\/[^\s]+\.[^\s]+/i.test(String(value).trim());
+const isHttpUrl = (value) => {
+  if (!value) return true
+  const s = String(value).trim()
+  if (s === 'Not mentioned' || s === 'Page content unreliable') return true
+  return /^https?:\/\/[^\s]+\.[^\s]+/i.test(s)
+}
 
-// Accepts 'YYYY-MM-DD' or an ISO date; blank is allowed (dates are optional
-// and must never be fabricated).
+// Accepts ISO date, free text with dates/markers, or Not mentioned.
 const isValidDateStr = (value) => {
   if (!value) return true;
   const s = String(value).trim();
-  return /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
+  if (!s) return true;
+  if (s === 'Not mentioned' || s === 'Page content unreliable') return true;
+  if (s.includes('CONFLICT - verify on official site')) return true;
+  if (s.includes('(tentative)')) return true;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const d = new Date(s);
+    return Number.isFinite(d.getTime());
+  }
+  if (/\d{4}/.test(s)) return true;
+  if (/^[A-Za-z0-9:,\-\/()\s]+$/.test(s) && s.length <= 200) return true;
+  return false;
 };
 
 const toNullIfEmpty = (value) => (value === "" || value === null || value === undefined ? null : value);
@@ -23,8 +51,13 @@ const toNullIfEmpty = (value) => (value === "" || value === null || value === un
 const pickNumber = (value) => {
   const v = toNullIfEmpty(value);
   if (v === null) return null;
-  const n = Number(v);
-  return Number.isFinite(n) && n >= 0 ? n : NaN;
+  const s = String(v).trim();
+  if (s === 'Not mentioned' || s === 'Page content unreliable' || s.includes('CONFLICT')) return s;
+  const n = Number(s);
+  if (Number.isFinite(n) && n >= 0) return n;
+  // allow numeric strings like "18"
+  if (/^\d+$/.test(s)) return s;
+  return s || '';
 };
 
 const toArray = (value) => {
@@ -281,7 +314,7 @@ function validateExamBody(body, existing) {
     return { error: "Application end date cannot be before the application start date" };
   }
 
-  if (result.status !== undefined && !["", "Upcoming", "Application Open", "Application Closed", "Exam Scheduled", "Result Released", "Archived"].includes(result.status)) {
+  if (result.status !== undefined && !VALID_STATUSES.includes(result.status)) {
     return { error: "Invalid status value" };
   }
 
@@ -383,8 +416,8 @@ exports.createExam = async (req, res) => {
       description: exam.description || "",
       qualification: exam.qualification || "",
       eligibleDegrees: toArray(exam.eligibleDegrees),
-      minimumAge: pickNumber(exam.minimumAge),
-      maximumAge: pickNumber(exam.maximumAge),
+      minimumAge: exam.minimumAge,
+      maximumAge: exam.maximumAge,
       ageRelaxation: exam.ageRelaxation || "",
       additionalEligibility: exam.additionalEligibility || "",
       posts: toArray(exam.posts),
@@ -472,8 +505,8 @@ exports.updateExam = async (req, res) => {
     setIfPresent("description", (v) => v || "");
     setIfPresent("qualification", (v) => v || "");
     setIfPresent("eligibleDegrees", (v) => toArray(v));
-    if (req.body.minimumAge !== undefined) exam.minimumAge = pickNumber(req.body.minimumAge);
-    if (req.body.maximumAge !== undefined) exam.maximumAge = pickNumber(req.body.maximumAge);
+    if (req.body.minimumAge !== undefined) exam.minimumAge = req.body.minimumAge;
+    if (req.body.maximumAge !== undefined) exam.maximumAge = req.body.maximumAge;
     setIfPresent("ageRelaxation", (v) => v || "");
     setIfPresent("additionalEligibility", (v) => v || "");
     setIfPresent("posts", (v) => toArray(v));
@@ -522,5 +555,29 @@ exports.deleteExam = async (req, res) => {
     res.status(200).json({ success: true, message: "Exam archived", data: exam });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to archive exam", error: error.message });
+  }
+};
+
+// @desc    Sync Central Government exams from the EasyShiksha source.
+//          Admin-only, idempotent; returns a run summary. Source/scraping
+//          internals are logged server-side and never returned to the client —
+//          a per-exam failure is only counted, never fatal.
+// @route   POST /api/graduate-exams/central/sync
+exports.syncCentralExams = async (req, res) => {
+  try {
+    const limit = Number.parseInt(req.query.limit, 10);
+    const summary = await runCentralSync({
+      limit: Number.isFinite(limit) && limit > 0 ? limit : 0,
+    });
+    res.status(200).json(summary);
+  } catch (error) {
+    if (error instanceof SourceFetchError) {
+      console.error("[graduate-exams] central sync — source unreachable:", error.message);
+      return res
+        .status(502)
+        .json({ success: false, message: "Could not reach the exam source right now. Please try again later." });
+    }
+    console.error("[graduate-exams] central sync failed:", error);
+    res.status(500).json({ success: false, message: "Central exam sync failed. Please try again." });
   }
 };

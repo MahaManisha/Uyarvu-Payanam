@@ -328,7 +328,6 @@ export default function GraduateRoadmapPage() {
     "ELIGIBILITY",
     "EXAM PATTERN",
     "SYLLABUS",
-    "PREVIOUS PAPERS",
     "PRACTICE",
     "MOCK TESTS",
     "PROGRESS",
@@ -624,29 +623,7 @@ export default function GraduateRoadmapPage() {
         </div>
       )}
 
-      {/* ── TAB 6: PREVIOUS PAPERS ────────────────────────────────────────────── */}
-      {activeTab === "PREVIOUS PAPERS" && (
-        <div style={{ background: '#fff', borderRadius: 16, padding: 24, border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <h3 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: '#0f172a' }}>Verified Official Previous Question Papers</h3>
-          {activeExam.previousPapers?.length ? (
-            activeExam.previousPapers.map((pap, idx) => (
-              <div key={idx} style={{ background: '#f8fafc', padding: 16, borderRadius: 12, border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: 15, color: '#0f172a' }}>{pap.paperTitle}</div>
-                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{pap.officialSource} • {pap.year}</div>
-                </div>
-                <a href={pap.paperUrl} target="_blank" rel="noopener noreferrer" style={{ background: '#2563eb', color: '#fff', padding: '8px 14px', borderRadius: 8, textDecoration: 'none', fontSize: 12.5, fontWeight: 800 }}>
-                  Open Official PDF <FiExternalLink size={13} />
-                </a>
-              </div>
-            ))
-          ) : (
-            <div style={{ color: '#64748b', fontSize: 14 }}>No verified previous papers available in current source set.</div>
-          )}
-        </div>
-      )}
-
-      {/* ── TAB 7: PRACTICE ───────────────────────────────────────────────────── */}
+      {/* ── TAB 6: PRACTICE ───────────────────────────────────────────────────── */}
       {activeTab === "PRACTICE" && (
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, border: '1px solid #e2e8f0' }}>
           <h3 style={{ margin: '0 0 12px', fontSize: 19, fontWeight: 800, color: '#0f172a' }}>Exam-Specific Practice Question Drills</h3>
@@ -656,7 +633,7 @@ export default function GraduateRoadmapPage() {
         </div>
       )}
 
-      {/* ── TAB 8: MOCK TESTS ─────────────────────────────────────────────────── */}
+      {/* ── TAB 7: MOCK TESTS ─────────────────────────────────────────────────── */}
       {activeTab === "MOCK TESTS" && (
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, border: '1px solid #e2e8f0' }}>
           <h3 style={{ margin: '0 0 14px', fontSize: 19, fontWeight: 800, color: '#0f172a' }}>Sectional & Full Mock Test Simulator</h3>
@@ -675,7 +652,7 @@ export default function GraduateRoadmapPage() {
         </div>
       )}
 
-      {/* ── TAB 9: PROGRESS ───────────────────────────────────────────────────── */}
+      {/* ── TAB 8: PROGRESS ───────────────────────────────────────────────────── */}
       {activeTab === "PROGRESS" && (
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, border: '1px solid #e2e8f0' }}>
           <h3 style={{ margin: '0 0 14px', fontSize: 19, fontWeight: 800, color: '#0f172a' }}>Exam Readiness & Weak Area Analytics</h3>
@@ -683,7 +660,7 @@ export default function GraduateRoadmapPage() {
         </div>
       )}
 
-      {/* ── TAB 10: SOURCES ───────────────────────────────────────────────────── */}
+      {/* ── TAB 9: SOURCES ───────────────────────────────────────────────────── */}
       {activeTab === "SOURCES" && (
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <h3 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: '#0f172a' }}>Verified Official Sources</h3>

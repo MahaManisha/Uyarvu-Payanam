@@ -108,6 +108,16 @@ const graduateService = {
     return response.data;
   },
 
+  getNotifications: async () => {
+    const response = await axiosInstance.get('/graduate/notifications');
+    return response.data;
+  },
+
+  getRecommendations: async () => {
+    const response = await axiosInstance.get('/graduate/recommendations');
+    return response.data;
+  },
+
   chatAdvisor: async (payload) => {
     const response = await axiosInstance.post('/graduate/advisor/chat', payload);
     return response.data;

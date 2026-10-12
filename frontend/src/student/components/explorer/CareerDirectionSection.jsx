@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom'
 import styles from './CareerDirectionSection.module.css'
 
 /**
- * Graduate tab main content: two equal, large cards — Government Career and
- * Private Career. Rendered directly after the Graduate segmented tab is
- * selected (no accordion, no section heading, no badges).
+ * Graduate tab main content: three equal, large cards — Government Career,
+ * Private Career and Higher Studies. Rendered directly after the Graduate
+ * segmented tab is selected (no accordion, no section heading, no badges).
  */
 export default function CareerDirectionSection() {
   return (
@@ -48,6 +48,20 @@ export default function CareerDirectionSection() {
           </span>
           <span className={styles.cardCta}>
             Explore Private Careers <span className={styles.arrow} aria-hidden="true">→</span>
+          </span>
+        </Link>
+
+        {/* Higher Studies */}
+        <Link to="/higher-studies" className={styles.card} style={{ '--acc': '#7C3AED' }}>
+          <span className={styles.cardArt}>
+            <span style={{ fontSize: 56, lineHeight: 1 }}>🎓</span>
+          </span>
+          <span className={styles.cardTitle}>Higher Studies</span>
+          <span className={styles.cardDesc}>
+            Explore postgraduate degrees, professional qualifications, entrance exams and career paths after graduation.
+          </span>
+          <span className={styles.cardCta}>
+            Explore Higher Studies <span className={styles.arrow} aria-hidden="true">→</span>
           </span>
         </Link>
       </div>

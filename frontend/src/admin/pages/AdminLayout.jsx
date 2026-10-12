@@ -38,6 +38,7 @@ import AcademicTaxonomyManagementPage from './admin/AcademicTaxonomyManagementPa
 import CollegeCareerCatalogManagementPage from './admin/CollegeCareerCatalogManagementPage'
 import CollegeStudentsPage from './admin/CollegeStudentsPage'
 import CollegeScholarshipsPage from './admin/CollegeScholarshipsPage'
+import HigherStudiesPage from './admin/HigherStudiesPage'
 
 import GraduateExamsHome from './admin/graduate/GraduateExamsHome'
 import GraduateStatesPage from './admin/graduate/GraduateStatesPage'
@@ -71,6 +72,7 @@ const NAV = [
   { id: 'onboarding', icon: '📝', label: 'Onboarding Management', path: 'onboarding' },
   { id: 'recommendation-rules', icon: '🧩', label: 'Recommendation Rules', path: 'recommendation-rules' },
   { id: 'settings', icon: '⚙️', label: 'Settings', path: 'settings' },
+  { id: 'higher-studies', icon: '🎓', label: 'Higher Studies', path: 'higher-studies' },
 ]
 
 const PAGE_META = {
@@ -98,6 +100,7 @@ const PAGE_META = {
   'onboarding': { title: 'Onboarding Management', sub: 'Initial setup questions' },
   'recommendation-rules': { title: 'Recommendation Rules', sub: 'Assessment engine rules & guideline messages' },
   'settings': { title: 'Settings', sub: 'System configuration' },
+  'higher-studies': { title: 'Higher Studies', sub: 'Postgraduate courses, diplomas & certificates' },
 }
 
 export default function AdminLayout() {
@@ -242,6 +245,7 @@ export default function AdminLayout() {
             <Route path="onboarding" element={<OnboardingManagementPage />} />
             <Route path="recommendation-rules" element={<RecommendationRulesPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="higher-studies" element={<HigherStudiesPage />} />
           </Routes>
         </main>
 

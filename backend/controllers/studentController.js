@@ -45,13 +45,11 @@ const registerStudent = async (req, res) => {
     let created = false;
 
     if (!student) {
-      // Validate userType enum & auto-detect college institutional emails (.edu.in, .ac.in, nec.edu.in)
+      // The signup selection is the authoritative student type. It is NEVER
+      // inferred from the email domain — a .edu/.ac.in address does not make
+      // a School or Graduate account a College account.
       const validUserTypes = ["school_student", "college_student", "graduate"];
-      let finalUserType = validUserTypes.includes(userType) ? userType : "school_student";
-      const isCollegeDomain = /@nec\.edu\.in$/i.test(normalizedEmail) || /(\.edu|\.ac)\.in$/i.test(normalizedEmail);
-      if (isCollegeDomain && finalUserType === "school_student") {
-        finalUserType = "college_student";
-      }
+      const finalUserType = validUserTypes.includes(userType) ? userType : "school_student";
 
       // Hash password
       const salt = await bcrypt.genSalt(10);
@@ -121,6 +119,9 @@ const registerStudent = async (req, res) => {
 
 const loginStudent = async (req, res) => {
   try {
+    if (!req.body) {
+      return res.status(400).json({ message: "Request body is missing or malformed." });
+    }
     const { email, password } = req.body;
     const normalizedEmail = String(email || "").trim().toLowerCase();
 
@@ -134,6 +135,9 @@ const loginStudent = async (req, res) => {
     }
 
     if (student.status === "blocked") {
+    // Temporary safe diagnostic (id/role/userType only — no PII).
+    console.log('[auth] password login id=' + student._id + ' role=' + student.role + ' userType=' + student.userType);
+
       return res.status(403).json({ message: "Your account has been blocked by admin" });
     }
 
@@ -152,14 +156,11 @@ const loginStudent = async (req, res) => {
       });
     }
 
-    // Auto-heal college institutional emails & classLevel college_student records
-    const isCollegeEmail = /@nec\.edu\.in$/i.test(student.email) || /(\.edu|\.ac)\.in$/i.test(student.email);
-    if (isCollegeEmail || student.classLevel === "college_student") {
-      if (student.userType !== "college_student") {
-        student.userType = "college_student";
-        await student.save();
-      }
-    }
+    // NOTE: userType is the stored, authoritative identity of this account.
+    // Login must NEVER re-classify it from the email domain or classLevel —
+    // a Graduate with a .edu address stays Graduate, a School account stays
+    // School. (Deliberate school→college transitions happen only through the
+    // explicit "Update Current Study" flow in studentProfileController.)
 
     // Generate token
     const token = jwt.sign({ id: student._id }, getJwtSecret(), {

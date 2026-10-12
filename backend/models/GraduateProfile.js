@@ -70,8 +70,32 @@ const graduateProfileSchema = new mongoose.Schema(
     preferredEnvironment: { type: String, default: "Office / Hybrid" },
     targetCareer: { type: String, trim: true },
 
-    // ── COMPETITIVE EXAMS & HIGHER STUDIES ────────────────────────────────
-    examInterest: { type: String, enum: ["Yes", "Maybe", "No"], default: "Yes" },
+    // ── Interest-based onboarding preferences ──────────────────────────
+    careerInterests: [
+      {
+        type: String,
+        enum: [
+          "Central Government Exams",
+          "State Government Exams",
+          "Private-Sector Jobs",
+          "Both Government and Private Opportunities"
+        ]
+      }
+    ],
+    targetState: { type: String, trim: true, default: "" },
+    examPreparation: {
+      type: String,
+      enum: ["", "Yes", "No", "Planning to start"],
+      default: ""
+    },
+    ageRange: { type: String, trim: true, default: "" },
+
+    // ── STAGE 4: Competitive Exams ─────────────────────────────────────────
+    examInterest: {
+      type: String,
+      enum: ["Yes", "Maybe", "No"],
+      default: "No"
+    },
     selectedExams: [
       {
         examName: { type: String },
@@ -92,7 +116,46 @@ const graduateProfileSchema = new mongoose.Schema(
     preferredLocations: [{ type: String }],
     resumeUrl: { type: String, default: "" },
 
-    // ── TELEMETRY & COMPLETION ────────────────────────────────────────────
+    // ── Portfolio, Projects & Experience ───────────────────────────────────
+    projects: [
+      {
+        title: { type: String },
+        description: { type: String },
+        techStack: { type: String },
+        projectUrl: { type: String }
+      }
+    ],
+    internships: [
+      {
+        company: { type: String },
+        role: { type: String },
+        duration: { type: String },
+        description: { type: String }
+      }
+    ],
+    certifications: [
+      {
+        name: { type: String },
+        issuer: { type: String },
+        issueYear: { type: String }
+      }
+    ],
+    workExperience: [
+      {
+        company: { type: String },
+        role: { type: String },
+        duration: { type: String },
+        description: { type: String }
+      }
+    ],
+    resumeUrl: { type: String },
+    phone: { type: String, default: "" },
+    location: { type: String, default: "" },
+    linkedinUrl: { type: String, default: "" },
+    githubUrl: { type: String, default: "" },
+    portfolioUrl: { type: String, default: "" },
+
+    // ── Telemetry & Scores ─────────────────────────────────────────────────
     currentStep: { type: Number, default: 1 },
     profileCompletion: { type: Number, default: 0 },
     careerReadinessScore: { type: Number, default: 40 },

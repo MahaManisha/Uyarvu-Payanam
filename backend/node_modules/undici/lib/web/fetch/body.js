@@ -2,26 +2,20 @@
 
 const util = require('../../core/util')
 const {
-  ReadableStreamFrom,
   readableStreamClose,
   fullyReadBody,
   extractMimeType
 } = require('./util')
-const { FormData, setFormDataState } = require('./formdata')
+const { FormData, setFormDataState, getFormDataBoundary } = require('./formdata')
 const { webidl } = require('../webidl')
 const assert = require('node:assert')
 const { isErrored, isDisturbed } = require('node:stream')
 const { isUint8Array } = require('node:util/types')
 const { serializeAMimeType } = require('./data-url')
 const { multipartFormDataParser } = require('./formdata-parser')
-const { createDeferredPromise } = require('../../util/promise')
 const { parseJSONFromBytes } = require('../infra')
 const { utf8DecodeBytes } = require('../../encoding')
-const { runtimeFeatures } = require('../../util/runtime-features.js')
-
-const random = runtimeFeatures.has('crypto')
-  ? require('node:crypto').randomInt
-  : (max) => Math.floor(Math.random() * max)
+const { ReadableStreamTee } = require('node:stream/web')
 
 const textEncoder = new TextEncoder()
 function noop () {}
@@ -107,7 +101,7 @@ function extractBody (object, keepalive = false) {
     // Set source to a copy of the bytes held by object.
     source = webidl.util.getCopyOfBytesHeldByBufferSource(object)
   } else if (webidl.is.FormData(object)) {
-    const boundary = `----formdata-undici-0${`${random(1e11)}`.padStart(11, '0')}`
+    const boundary = getFormDataBoundary(object)
     const prefix = `--${boundary}\r\nContent-Disposition: form-data`
 
     /*! formdata-polyfill. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> */
@@ -202,8 +196,16 @@ function extractBody (object, keepalive = false) {
       )
     }
 
-    stream =
-      webidl.is.ReadableStream(object) ? object : ReadableStreamFrom(object)
+    stream = webidl.is.ReadableStream(object)
+      ? object
+      : ReadableStream.from(object).pipeThrough(new TransformStream({
+        transform (chunk, controller) {
+          const bytes = isUint8Array(chunk) ? chunk : Buffer.from(chunk)
+          if (bytes.byteLength) {
+            controller.enqueue(bytes)
+          }
+        }
+      }))
   }
 
   // 11. If source is a byte sequence, then set action to a
@@ -285,7 +287,7 @@ function cloneBody (body) {
   // https://fetch.spec.whatwg.org/#concept-body-clone
 
   // 1. Let « out1, out2 » be the result of teeing body’s stream.
-  const { 0: out1, 1: out2 } = body.stream.tee()
+  const { 0: out1, 1: out2 } = ReadableStreamTee?.(body.stream, true) ?? body.stream.tee()
 
   // 2. Set body’s stream to out1.
   body.stream = out1
@@ -298,7 +300,7 @@ function cloneBody (body) {
   }
 }
 
-function bodyMixinMethods (instance, getInternalState) {
+function bodyMixinMethods (brandCheck, getInternalState) {
   const methods = {
     blob () {
       // The blob() method steps are to return the result of
@@ -318,7 +320,7 @@ function bodyMixinMethods (instance, getInternalState) {
         // Return a Blob whose contents are bytes and type attribute
         // is mimeType.
         return new Blob([bytes], { type: mimeType })
-      }, instance, getInternalState)
+      }, brandCheck, getInternalState)
     },
 
     arrayBuffer () {
@@ -328,19 +330,19 @@ function bodyMixinMethods (instance, getInternalState) {
       // whose contents are bytes.
       return consumeBody(this, (bytes) => {
         return new Uint8Array(bytes).buffer
-      }, instance, getInternalState)
+      }, brandCheck, getInternalState)
     },
 
     text () {
       // The text() method steps are to return the result of running
       // consume body with this and UTF-8 decode.
-      return consumeBody(this, utf8DecodeBytes, instance, getInternalState)
+      return consumeBody(this, utf8DecodeBytes, brandCheck, getInternalState)
     },
 
     json () {
       // The json() method steps are to return the result of running
       // consume body with this and parse JSON from bytes.
-      return consumeBody(this, parseJSONFromBytes, instance, getInternalState)
+      return consumeBody(this, parseJSONFromBytes, brandCheck, getInternalState)
     },
 
     formData () {
@@ -388,7 +390,7 @@ function bodyMixinMethods (instance, getInternalState) {
         throw new TypeError(
           'Content-Type was not one of "multipart/form-data" or "application/x-www-form-urlencoded".'
         )
-      }, instance, getInternalState)
+      }, brandCheck, getInternalState)
     },
 
     bytes () {
@@ -397,27 +399,70 @@ function bodyMixinMethods (instance, getInternalState) {
       // result of creating a Uint8Array from bytes in this’s relevant realm.
       return consumeBody(this, (bytes) => {
         return new Uint8Array(bytes)
-      }, instance, getInternalState)
+      }, brandCheck, getInternalState)
+    },
+
+    textStream () {
+      const this_ = getInternalState(this)
+
+      // 1. If this is unusable, then throw a TypeError.
+      if (bodyUnusable(this_)) {
+        throw new TypeError('Body is unusable: Body has already been read')
+      }
+
+      // 2. If this’s body is null:
+      if (this_.body == null) {
+        // 2.1. Let emptyStream be a new ReadableStream in this’s relevant realm.
+        // 2.2. Set up emptyStream.
+        /** @type {ReadableStreamDefaultController<any>} */
+        let controller
+        const emptyStream = new ReadableStream({
+          start: (c) => {
+            controller = c
+          },
+          pull: () => Promise.resolve(),
+          cancel: () => Promise.resolve()
+        }, {
+          size: () => 1
+        })
+
+        // 2.3. Close emptyStream.
+        controller.close()
+
+        // 2.4. Return emptyStream.
+        return emptyStream
+      }
+
+      // 3. Let stream be this’s body’s stream.
+      /** @type {ReadableStream} */
+      const stream = this_.body.stream
+
+      // 4. Let decoder be a new TextDecoderStream object in this’s relevant realm.
+      // 5. Set up decoder with UTF-8.
+      const decoder = new TextDecoderStream('UTF-8')
+
+      // 6. Return the result of stream, piped through decoder.
+      return stream.pipeThrough(decoder)
     }
   }
 
   return methods
 }
 
-function mixinBody (prototype, getInternalState) {
-  Object.assign(prototype.prototype, bodyMixinMethods(prototype, getInternalState))
+function mixinBody (prototype, getInternalState, brandCheck) {
+  Object.assign(prototype.prototype, bodyMixinMethods(brandCheck, getInternalState))
 }
 
 /**
  * @see https://fetch.spec.whatwg.org/#concept-body-consume-body
  * @param {any} object internal state
  * @param {(value: unknown) => unknown} convertBytesToJSValue
- * @param {any} instance
+ * @param {import('../../../types/webidl').WebidlIsFunction} brandCheck
  * @param {(target: any) => any} getInternalState
  */
-function consumeBody (object, convertBytesToJSValue, instance, getInternalState) {
+function consumeBody (object, convertBytesToJSValue, brandCheck, getInternalState) {
   try {
-    webidl.brandCheck(object, instance)
+    webidl.brandCheck(object, brandCheck)
   } catch (e) {
     return Promise.reject(e)
   }
@@ -431,7 +476,7 @@ function consumeBody (object, convertBytesToJSValue, instance, getInternalState)
   }
 
   // 2. Let promise be a new promise.
-  const promise = createDeferredPromise()
+  const promise = Promise.withResolvers()
 
   // 3. Let errorSteps given error be to reject promise with error.
   const errorSteps = promise.reject

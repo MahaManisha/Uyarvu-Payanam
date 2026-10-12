@@ -37,6 +37,9 @@ const login = loginStudent;
 // generic so the forgot-password flow does not reveal which emails are registered.
 const requestOtp = async (req, res) => {
   try {
+    if (!req.body) {
+      return res.status(400).json({ message: "Request body is missing or malformed." });
+    }
     const email = String(req.body.email || "").trim().toLowerCase();
     const purpose = req.body.purpose === "reset" ? "reset" : "login";
 
@@ -82,6 +85,9 @@ const requestOtp = async (req, res) => {
 // ── OTP sign-in ────────────────────────────────────────────────────────────────
 const verifyLoginOtp = async (req, res) => {
   try {
+    if (!req.body) {
+      return res.status(400).json({ message: "Request body is missing or malformed." });
+    }
     const email = String(req.body.email || "").trim().toLowerCase();
     const otp = String(req.body.otp || "").trim();
 
@@ -99,6 +105,9 @@ const verifyLoginOtp = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
     if (student.status === "blocked") {
+    // Temporary safe diagnostic (id/role/userType only — no PII).
+    console.log('[auth] otp login id=' + student._id + ' role=' + student.role + ' userType=' + student.userType);
+
       return res.status(403).json({ message: "Your account has been blocked by admin" });
     }
 
@@ -109,14 +118,10 @@ const verifyLoginOtp = async (req, res) => {
       await student.save();
     }
 
-    // Auto-heal college institutional emails & classLevel college_student records
-    const isCollegeEmail = /@nec\.edu\.in$/i.test(student.email) || /(\.edu|\.ac)\.in$/i.test(student.email);
-    if (isCollegeEmail || student.classLevel === "college_student") {
-      if (student.userType !== "college_student") {
-        student.userType = "college_student";
-        await student.save();
-      }
-    }
+    // NOTE: userType is the stored, authoritative identity of this account.
+    // A successful OTP proves email ownership — it does NOT prove the account
+    // is a College account. Never re-classify from the email domain or
+    // classLevel here (a Graduate with a .edu address stays Graduate).
 
     const token = jwt.sign({ id: student._id }, getJwtSecret(), {
       expiresIn: "7d",

@@ -65,10 +65,11 @@ const graduateExamSchema = new mongoose.Schema(
     // ── Eligibility ───────────────────────────────────────────
     qualification: { type: String, default: "" },
     eligibleDegrees: { type: [String], default: [] },
-    minimumAge: { type: Number, min: 0, default: null },
-    maximumAge: { type: Number, min: 0, default: null },
+    minimumAge: { type: String, default: "" },
+    maximumAge: { type: String, default: "" },
     ageRelaxation: { type: String, default: "" },
     additionalEligibility: { type: String, default: "" },
+    applicationFee: { type: String, default: "" },
     // ── Recruitment information ───────────────────────────────
     posts: { type: [String], default: [] },
     salary: { type: String, default: "" },
@@ -81,16 +82,38 @@ const graduateExamSchema = new mongoose.Schema(
     applicationEndDate: { type: String, default: "" },
     examDate: { type: String, default: "" },
     resultDate: { type: String, default: "" },
+    // ── Additional source-extracted info (synced records) ─────
+    // Short factual snippets taken verbatim from the source page's
+    // Vacancy / Admit Card / Result / Cutoff sections. Never fabricated:
+    // they stay empty when the source does not publish the information.
+    vacancyInfo: { type: String, default: "" },
+    admitCardInfo: { type: String, default: "" },
+    resultInfo: { type: String, default: "" },
+    cutoffInfo: { type: String, default: "" },
+    // Plain-text digest of the source's "Dates" section — kept as context
+    // when dates are published as text ("May – June 2026") rather than as
+    // exact calendar dates.
+    datesNotes: { type: String, default: "" },
     // ── Links ─────────────────────────────────────────────────
     officialWebsite: { type: String, trim: true, default: "" },
     notificationUrl: { type: String, trim: true, default: "" },
     applicationUrl: { type: String, trim: true, default: "" },
     sourceUrl: { type: String, trim: true, default: "" },
+    // ── Source tracking (synced records) ──────────────────────
+    // sourceWebsite + sourceUrl form the stable upsert key for synced
+    // records; sourceLastChecked is bumped on every sync run while
+    // updatedAt (lastUpdated) only moves when real data changed.
+    sourceWebsite: { type: String, trim: true, default: "" },
+    sourceLastChecked: { type: String, default: "" },
+    // Body name exactly as published by the source (organisation above
+    // remains the managed, admin-editable grouping).
+    conductingBody: { type: String, default: "" },
     // ── Status & lifecycle ────────────────────────────────────
     status: {
       type: String,
       enum: [
         "",
+        "TBA",
         "Upcoming",
         "Application Open",
         "Application Closed",

@@ -13,7 +13,11 @@ const kOnDrain = Symbol('onDrain')
 const kOnConnect = Symbol('onConnect')
 const kOnDisconnect = Symbol('onDisconnect')
 const kOnConnectionError = Symbol('onConnectionError')
+const kOnClientBusy = Symbol('on client busy')
+const kOnClientDrain = Symbol('on client drain')
+const kDrainQueue = Symbol('drain queue')
 const kGetDispatcher = Symbol('get dispatcher')
+const kHasDispatcher = Symbol('has dispatcher')
 const kAddClient = Symbol('add client')
 const kRemoveClient = Symbol('remove client')
 
@@ -27,9 +31,14 @@ class PoolBase extends DispatcherBase {
   [kNeedDrain] = false;
 
   [kOnDrain] (client, origin, targets) {
-    const queue = this[kQueue]
+    if (client.closed || client.destroyed) {
+      return
+    }
 
+    const queue = this[kQueue]
     let needDrain = false
+
+    this[kOnClientDrain](client)
 
     while (!needDrain) {
       const item = queue.shift()
@@ -41,8 +50,57 @@ class PoolBase extends DispatcherBase {
     }
 
     client[kNeedDrain] = needDrain
+    if (needDrain) {
+      this[kOnClientBusy](client)
+    }
 
     if (!needDrain && this[kNeedDrain]) {
+      this[kNeedDrain] = false
+      this.emit('drain', origin, [this, ...targets])
+    }
+
+    if (this[kClosedResolve] && queue.isEmpty()) {
+      const closeAll = []
+      for (let i = 0; i < this[kClients].length; i++) {
+        const client = this[kClients][i]
+        if (!client.destroyed) {
+          closeAll.push(client.close())
+        }
+      }
+      return Promise.all(closeAll)
+        .then(this[kClosedResolve])
+    }
+  }
+
+  [kOnClientBusy] () {}
+
+  [kOnClientDrain] () {}
+
+  [kDrainQueue] (origin, targets) {
+    const queue = this[kQueue]
+    let hasDispatcher = true
+
+    while (!queue.isEmpty()) {
+      const dispatcher = this[kGetDispatcher]()
+      if (!dispatcher) {
+        hasDispatcher = false
+        break
+      }
+
+      const item = queue.shift()
+      this[kQueued]--
+
+      if (!dispatcher.dispatch(item.opts, item.handler)) {
+        dispatcher[kNeedDrain] = true
+        this[kOnClientBusy](dispatcher)
+        hasDispatcher = this[kHasDispatcher]()
+        if (!hasDispatcher) {
+          break
+        }
+      }
+    }
+
+    if (hasDispatcher && this[kNeedDrain]) {
       this[kNeedDrain] = false
       this.emit('drain', origin, [this, ...targets])
     }
@@ -143,7 +201,7 @@ class PoolBase extends DispatcherBase {
       if (!item) {
         break
       }
-      item.handler.onError(err)
+      item.handler.onResponseError(null, err)
     }
 
     const destroyAll = new Array(this[kClients].length)
@@ -162,10 +220,27 @@ class PoolBase extends DispatcherBase {
       this[kQueued]++
     } else if (!dispatcher.dispatch(opts, handler)) {
       dispatcher[kNeedDrain] = true
-      this[kNeedDrain] = !this[kGetDispatcher]()
+      this[kOnClientBusy](dispatcher)
+      this[kNeedDrain] = !this[kHasDispatcher]()
     }
 
     return !this[kNeedDrain]
+  }
+
+  [kHasDispatcher] () {
+    for (let i = 0; i < this[kClients].length; i++) {
+      const dispatcher = this[kClients][i]
+
+      if (
+        !dispatcher[kNeedDrain] &&
+        dispatcher.closed !== true &&
+        dispatcher.destroyed !== true
+      ) {
+        return true
+      }
+    }
+
+    return false
   }
 
   [kAddClient] (client) {
@@ -179,7 +254,7 @@ class PoolBase extends DispatcherBase {
 
     if (this[kNeedDrain]) {
       queueMicrotask(() => {
-        if (this[kNeedDrain]) {
+        if (this[kNeedDrain] && !client[kNeedDrain]) {
           this[kOnDrain](client, client[kUrl], [client, this])
         }
       })
@@ -189,14 +264,14 @@ class PoolBase extends DispatcherBase {
   }
 
   [kRemoveClient] (client) {
-    client.close(() => {
-      const idx = this[kClients].indexOf(client)
-      if (idx !== -1) {
-        this[kClients].splice(idx, 1)
-      }
-    })
+    const idx = this[kClients].indexOf(client)
+    if (idx !== -1) {
+      this[kClients].splice(idx, 1)
+    }
 
-    this[kNeedDrain] = this[kClients].some(dispatcher => (
+    client.close(() => {})
+
+    this[kNeedDrain] = !this[kClients].some(dispatcher => (
       !dispatcher[kNeedDrain] &&
       dispatcher.closed !== true &&
       dispatcher.destroyed !== true
@@ -210,5 +285,9 @@ module.exports = {
   kNeedDrain,
   kAddClient,
   kRemoveClient,
-  kGetDispatcher
+  kDrainQueue,
+  kOnClientBusy,
+  kOnClientDrain,
+  kGetDispatcher,
+  kHasDispatcher
 }
