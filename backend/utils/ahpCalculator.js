@@ -30,18 +30,22 @@ const CAREER_TAXONOMY = {
     { id: "systems_iot", name: "Systems Programming & IoT", category: "Core Software", icon: "FiRadio", description: "Develop low-level C/C++ operating system drivers and IoT firmware." }
   ],
   it: [
-    { id: "fullstack_web", name: "Full Stack Web Development", category: "Software Development", icon: "FiGlobe", description: "Build high-performance web applications using modern frontend and backend frameworks." },
-    { id: "cloud_architecture", name: "Cloud Architecture & DevOps", category: "Infrastructure", icon: "FiZap", description: "Design resilient cloud architectures and automated container deployment." },
-    { id: "cyber_defense", name: "Cybersecurity & Information Assurance", category: "Security", icon: "FiShield", description: "Defend organizational digital assets and enforce security protocols." },
-    { id: "database_admin", name: "Database Administration & Big Data", category: "Data Management", icon: "FiActivity", description: "Optimize database queries, distributed storage, and data security." },
-    { id: "it_consulting", name: "IT Solutions & Enterprise Architecture", category: "IT Strategy", icon: "FiBriefcase", description: "Implement enterprise IT strategies and digital transformation solutions." }
+    { id: "ai_ml", name: "AI & Machine Learning", category: "AI & Data Science", icon: "FiCpu", description: "Build intelligent systems, neural networks, and predictive models." },
+    { id: "data_science", name: "Data Science & Big Data", category: "AI & Data Science", icon: "FiActivity", description: "Extract actionable insights from massive datasets using analytics & statistics." },
+    { id: "software_engineering", name: "Full Stack & Software Engineering", category: "Software Development", icon: "FiBriefcase", description: "Design scalable Web & Mobile applications and enterprise software architecture." },
+    { id: "cyber_security", name: "Cyber Security & Ethical Hacking", category: "Security & Systems", icon: "FiShield", description: "Protect networks, applications, and infrastructure from cyber threats." },
+    { id: "cloud_devops", name: "Cloud Computing & DevOps", category: "Infrastructure", icon: "FiGlobe", description: "Automate CI/CD pipelines and orchestrate cloud infrastructure on AWS/GCP/Azure." },
+    { id: "data_engineering", name: "Data Engineering & Analytics", category: "AI & Data Science", icon: "FiZap", description: "Construct data pipelines, data warehouses, and ETL streaming infrastructure." },
+    { id: "systems_iot", name: "Systems Programming & IoT", category: "Core Software", icon: "FiRadio", description: "Develop low-level C/C++ operating system drivers and IoT firmware." }
   ],
   aids: [
-    { id: "ai_scientist", name: "AI & Machine Learning Scientist", category: "AI & Data Science", icon: "FiCpu", description: "Research state-of-the-art machine learning algorithms and LLMs." },
-    { id: "data_engineer", name: "Big Data & Data Pipeline Engineer", category: "Data Infrastructure", icon: "FiZap", description: "Build high-throughput data processing pipelines and real-time streaming." },
-    { id: "business_analyst", name: "Data Analyst & Business Intelligence", category: "Analytics", icon: "FiActivity", description: "Transform complex data into strategic business insights using dashboards." },
-    { id: "deep_learning", name: "Deep Learning & NLP Specialist", category: "AI Research", icon: "FiFeather", description: "Develop natural language understanding, computer vision, and transformer models." },
-    { id: "mlops_engineer", name: "MLOps & AI Systems Engineer", category: "AI Operations", icon: "FiGlobe", description: "Deploy, monitor, and scale machine learning models in production environments." }
+    { id: "ai_ml", name: "AI & Machine Learning", category: "AI & Data Science", icon: "FiCpu", description: "Build intelligent systems, neural networks, and predictive models." },
+    { id: "data_science", name: "Data Science & Big Data", category: "AI & Data Science", icon: "FiActivity", description: "Extract actionable insights from massive datasets using analytics & statistics." },
+    { id: "software_engineering", name: "Full Stack & Software Engineering", category: "Software Development", icon: "FiBriefcase", description: "Design scalable Web & Mobile applications and enterprise software architecture." },
+    { id: "cyber_security", name: "Cyber Security & Ethical Hacking", category: "Security & Systems", icon: "FiShield", description: "Protect networks, applications, and infrastructure from cyber threats." },
+    { id: "cloud_devops", name: "Cloud Computing & DevOps", category: "Infrastructure", icon: "FiGlobe", description: "Automate CI/CD pipelines and orchestrate cloud infrastructure on AWS/GCP/Azure." },
+    { id: "data_engineering", name: "Data Engineering & Analytics", category: "AI & Data Science", icon: "FiZap", description: "Construct data pipelines, data warehouses, and ETL streaming infrastructure." },
+    { id: "systems_iot", name: "Systems Programming & IoT", category: "Core Software", icon: "FiRadio", description: "Develop low-level C/C++ operating system drivers and IoT firmware." }
   ],
   ece: [
     { id: "vlsi_chip_design", name: "VLSI & Chip Design", category: "Semiconductors & Chip Design", icon: "FiCpu", description: "Design integrated circuits, gate-level netlists, CMOS logic, and ASIC/FPGA semiconductor chips." },

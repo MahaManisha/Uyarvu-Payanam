@@ -30,23 +30,25 @@ const COLLEGE_FIELDS_DATA = [
       {
         name: "IT (Information Technology)",
         specs: [
-          "Enterprise Software & IT Infrastructure",
-          "Cloud Systems & Cloud Native Ops",
-          "Database Administration & Big Data",
-          "Network Security & Cyber Defense",
-          "Web Applications & Microservices",
-          "Information Systems Management"
+          "Software Engineering & Architecture",
+          "Artificial Intelligence & Machine Learning",
+          "Data Science & Big Data Analytics",
+          "Cyber Security & Ethical Hacking",
+          "Cloud Computing & DevOps",
+          "Full Stack Web & Mobile Development",
+          "Algorithms & System Programming"
         ]
       },
       {
         name: "AI & DS (Artificial Intelligence & Data Science)",
         specs: [
-          "Machine Learning & Deep Learning",
-          "Big Data Analytics & Data Engineering",
-          "Natural Language Processing (NLP)",
-          "Computer Vision & Image Processing",
-          "Generative AI & LLM Engineering",
-          "Predictive Modeling & Business Intelligence"
+          "Software Engineering & Architecture",
+          "Artificial Intelligence & Machine Learning",
+          "Data Science & Big Data Analytics",
+          "Cyber Security & Ethical Hacking",
+          "Cloud Computing & DevOps",
+          "Full Stack Web & Mobile Development",
+          "Algorithms & System Programming"
         ]
       },
       {

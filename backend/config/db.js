@@ -13,10 +13,22 @@ const connectDB = async () => {
     });
 
     mongoose.connection.on("disconnected", async () => {
-      console.warn("⚠️ Mongoose disconnected from primary database. Attempting reconnect...");
+      console.warn("⚠️ Mongoose disconnected. Attempting reconnect...");
       if (!isConnecting) {
         isConnecting = true;
         try {
+          if (primaryUri) {
+            try {
+              await mongoose.connect(primaryUri, {
+                serverSelectionTimeoutMS: 10000,
+                socketTimeoutMS: 45000
+              });
+              console.log(`MongoDB Reconnected (Primary): ${primaryUri.split("@")[1] || primaryUri}`);
+              return;
+            } catch (primErr) {
+              console.warn(`Primary reconnect failed: ${primErr.message}. Trying local fallback...`);
+            }
+          }
           await mongoose.connect(localFallbackUri, { serverSelectionTimeoutMS: 5000 });
           console.log(`MongoDB Reconnected (Local Fallback): ${localFallbackUri}`);
         } catch (e) {
