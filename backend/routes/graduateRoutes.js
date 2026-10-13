@@ -32,10 +32,8 @@ const {
   updateMentorProfile
 } = require("../controllers/graduateMentorController");
 
-// Dedicated Graduate AI Advisor controller (real, profile-grounded AI).
-const { chatWithGraduateAdvisor } = require("../controllers/graduateAdvisorController");
-
 const {
+  askAdvisorChat,
   generateResumeSuggestions,
   saveResumeVersion,
   getResumeVersions,
@@ -135,7 +133,7 @@ router.post(
   "/advisor/chat",
   verifyStudent,
   rateLimit({ keyFn: (req) => `grad-chat:${req.student._id || req.student?.id}`, max: 30, windowMs: 60000 }),
-  chatWithGraduateAdvisor
+  askAdvisorChat
 );
 
 // ── Peer Mentorship (Graduate-side) ─────────────────────────

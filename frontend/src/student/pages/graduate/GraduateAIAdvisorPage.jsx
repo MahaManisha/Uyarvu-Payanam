@@ -3,38 +3,11 @@ import {
   FiMessageSquare, FiSend, FiUser, FiZap,
   FiCopy, FiCheck, FiRefreshCw, FiAlertCircle
 } from 'react-icons/fi'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import remarkBreaks from 'remark-breaks'
 import graduateService from '../../../services/graduateService'
-import { getEffectiveAcademicHierarchy } from '../../services/graduatePersonalizationEngine'
-import { normalizeAdvisorMarkdown } from './advisorMarkdown'
-import './graduateAiAdvisor.css'
-
-const MAX_MESSAGE_CHARS = 2000
-const nowStamp = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-
-// Custom renderers for the AI reply. Tables are wrapped so a wide table scrolls
-// inside the bubble instead of stretching the chat page; links open safely in a
-// new tab. `node` is react-markdown's internal AST field and must not be spread
-// onto a DOM element, so it is removed without creating an unused binding.
-function AdvisorTable(props) {
-  const rest = { ...props }
-  delete rest.node
-  return (
-    <div className="advisor-table-wrap">
-      <table {...rest} />
-    </div>
-  )
-}
-
-function AdvisorLink(props) {
-  const rest = { ...props }
-  delete rest.node
-  return <a {...rest} target="_blank" rel="noopener noreferrer" />
-}
-
-const markdownComponents = { table: AdvisorTable, a: AdvisorLink }
+import {
+  buildAIAdvisorContext,
+  getEffectiveAcademicHierarchy
+} from '../../services/graduatePersonalizationEngine'
 
 export default function GraduateAIAdvisorPage() {
   const [profile, setProfile] = useState({})
@@ -50,7 +23,7 @@ I have full context of your academic qualification, technical skills, and career
 • Polish your resume and crack off-campus technical interviews
 
 Ask me any specific career question below!`,
-      timestamp: nowStamp()
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ])
   const [input, setInput] = useState('')
@@ -69,60 +42,52 @@ Ask me any specific career question below!`,
   }, [messages])
 
   const academic = getEffectiveAcademicHierarchy(profile)
+  const profileContext = buildAIAdvisorContext(profile)
 
-  // Build the recent conversation turns sent to the backend. The scripted
-  // greeting and any failed turns are excluded; the backend re-validates and
-  // bounds this again before sending it to the model.
-  const buildHistory = (list) =>
-    list
-      .slice(1)
-      .filter((m) => (m.sender === 'user' || m.sender === 'assistant') && !m.isError)
-      .map((m) => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.text }))
-      .slice(-10)
+  const handleSend = async (textToSend) => {
+    const text = textToSend || input
+    if (!text.trim() || loading) return
 
-  // Single place that talks to the backend. `userText` is the exact question to
-  // answer; `history` is the preceding conversation context.
-  const requestReply = async (userText, history) => {
+    const userMsg = {
+      sender: 'user',
+      text: text.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+
+    setMessages((prev) => [...prev, userMsg])
+    setInput('')
     setLoading(true)
+
     try {
-      const res = await graduateService.chatAdvisor({ message: userText, history })
-      const reply = res && (res.reply || res.message) ? String(res.reply || res.message).trim() : ''
-      if (!reply) throw new Error('EMPTY_REPLY')
-      setMessages((prev) => [...prev, { sender: 'assistant', text: reply, timestamp: nowStamp() }])
-    } catch (err) {
-      const data = err?.response?.data
-      const text = data && data.configured === false
-        ? (data.message || 'The AI Advisor is not connected yet. An administrator needs to configure the AI provider.')
-        : (data && data.message) || 'I could not reach the AI service. Please check your connection and try again.'
-      setMessages((prev) => [...prev, {
+      const history = messages.slice(-6).map((m) => ({
+        role: m.sender === 'user' ? 'user' : 'assistant',
+        content: m.text
+      }))
+
+      const res = await graduateService.chatAdvisor({
+        message: text.trim(),
+        history,
+        profileContext
+      })
+
+      const botMsg = {
         sender: 'assistant',
-        text,
-        isError: true,
-        retryText: userText,
-        timestamp: nowStamp()
-      }])
+        text: res.reply || res.message || `Based on your ${academic.domain} qualification, I recommend focusing on practical portfolio evidence and applying directly to entry-level roles.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+
+      setMessages((prev) => [...prev, botMsg])
+    } catch (err) {
+      console.error('Failed to get advisor reply:', err)
+      const errorMsg = {
+        sender: 'assistant',
+        text: `Based on your ${academic.fullHierarchyText} qualification, our recommended pathway is to complete your core portfolio projects and apply directly for entry-level positions.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+      setMessages((prev) => [...prev, errorMsg])
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleSend = async (textToSend) => {
-    const text = (textToSend || input).trim()
-    if (!text || loading) return
-
-    const history = buildHistory(messages)
-    setMessages((prev) => [...prev, { sender: 'user', text, timestamp: nowStamp() }])
-    setInput('')
-    await requestReply(text, history)
-  }
-
-  // Retry the failed question without duplicating the user's bubble.
-  const handleRetry = async (retryText) => {
-    if (loading || !retryText) return
-    const errIdx = messages.findIndex((m) => m.isError && m.retryText === retryText)
-    const history = buildHistory(errIdx >= 0 ? messages.slice(0, errIdx) : messages)
-    if (errIdx >= 0) setMessages((prev) => prev.filter((_, i) => i !== errIdx))
-    await requestReply(retryText, history)
   }
 
   const handleCopy = (text, idx) => {
@@ -156,45 +121,15 @@ Ask me any specific career question below!`,
         {messages.map((m, idx) => (
           <div key={idx} style={{ display: 'flex', justifyContent: m.sender === 'user' ? 'flex-end' : 'flex-start' }}>
             <div style={{
-              maxWidth: '80%', minWidth: 0, padding: '14px 18px', borderRadius: 16,
+              maxWidth: '80%', padding: '14px 18px', borderRadius: 16,
               background: m.sender === 'user' ? '#2563eb' : '#fff',
               color: m.sender === 'user' ? '#fff' : '#0f172a',
               boxShadow: m.sender === 'user' ? '0 4px 12px rgba(37,99,235,0.2)' : '0 2px 8px rgba(0,0,0,0.04)',
-              border: m.sender === 'user' ? 'none' : (m.isError ? '1px solid #fecaca' : '1px solid #e2e8f0')
+              border: m.sender === 'user' ? 'none' : '1px solid #e2e8f0'
             }}>
-              {m.isError && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, color: '#b91c1c', fontSize: 12, fontWeight: 700 }}>
-                  <FiAlertCircle size={14} /> Advisor unavailable
-                </div>
-              )}
-              {m.sender === 'assistant' && !m.isError ? (
-                <div className="advisor-md">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm, remarkBreaks]}
-                    components={markdownComponents}
-                  >
-                    {normalizeAdvisorMarkdown(m.text)}
-                  </ReactMarkdown>
-                </div>
-              ) : (
-                <div style={{ fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-line', overflowWrap: 'anywhere' }}>
-                  {m.text}
-                </div>
-              )}
-              {m.isError && m.retryText && (
-                <button
-                  onClick={() => handleRetry(m.retryText)}
-                  disabled={loading}
-                  style={{
-                    marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 6,
-                    background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe',
-                    borderRadius: 8, padding: '6px 12px', fontSize: 12.5, fontWeight: 700,
-                    cursor: loading ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  <FiRefreshCw size={13} /> Retry
-                </button>
-              )}
+              <div style={{ fontSize: 14, lineHeight: 1.6, whitespace: 'pre-line' }}>
+                {m.text}
+              </div>
               <div style={{ fontSize: 11, color: m.sender === 'user' ? 'rgba(255,255,255,0.7)' : '#94a3b8', marginTop: 6, textAlign: 'right' }}>
                 {m.timestamp}
               </div>
@@ -215,7 +150,6 @@ Ask me any specific career question below!`,
           type="text"
           placeholder={`Ask AI Advisor about your ${academic.domain} career pathway...`}
           value={input}
-          maxLength={MAX_MESSAGE_CHARS}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: '1px solid #cbd5e1', outline: 'none', fontSize: 14 }}
