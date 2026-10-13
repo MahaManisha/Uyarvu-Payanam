@@ -156,17 +156,28 @@ const server = http.createServer(app);
 
 // ─── CORS Origins ───────────────────────────────────────────────────
 const devOrigins = ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175"];
-const productionOrigin = process.env.FRONTEND_URL || "";
-const allowedOrigins = process.env.NODE_ENV === "production" && productionOrigin
-  ? [productionOrigin]
-  : devOrigins;
+const configuredOrigins = (process.env.FRONTEND_URL || "")
+  .split(",")
+  .map(o => o.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+
+const allowedOrigins = [...devOrigins, ...configuredOrigins];
 
 const corsOriginValidator = (origin, callback) => {
-  if (!origin || allowedOrigins.includes(origin)) {
-    callback(null, true);
-  } else {
-    callback(new Error("CORS policy: Origin not allowed"));
+  if (!origin) return callback(null, true);
+  const normalizedOrigin = origin.replace(/\/$/, "");
+
+  // Match explicitly allowed origins or local dev
+  if (allowedOrigins.includes(normalizedOrigin)) {
+    return callback(null, true);
   }
+
+  // Allow any *.vercel.app deployment preview
+  if (/\.vercel\.app$/.test(new URL(origin).hostname)) {
+    return callback(null, true);
+  }
+
+  callback(new Error("CORS policy: Origin not allowed"));
 };
 
 // ─── Socket.io setup ────────────────────────────────────────────────
@@ -297,6 +308,15 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// ── Health Check ────────────────────────────────────────────────────
+app.get("/", (req, res) => {
+  res.status(200).json({ status: "ok", message: "Uyarvu Payanam API is active" });
+});
+
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "healthy", timestamp: new Date().toISOString() });
+});
 
 // ── Routes ──────────────────────────────────────────────────────────
 app.use("/api/admin", require("./routes/adminRoutes"));
