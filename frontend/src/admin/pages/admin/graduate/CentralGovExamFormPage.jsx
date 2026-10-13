@@ -1,0 +1,466 @@
+import React, { useEffect, useState } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import {
+  SLoader, SBtn, SAlert, FormGrid, FormGroup, FormInput,
+} from '../../../components/UI'
+import { graduateExamService } from '../../../../services/graduateExamService'
+
+const STATUS_OPTIONS = [
+  'TBA',
+  'Upcoming',
+  'Application Open',
+  'Application Closed',
+  'Exam Scheduled',
+  'Result Released',
+  'Archived',
+]
+
+const isUrl = (v) => !v || /^https?:\/\/[^\s]+\.[^\s]+/i.test(String(v).trim())
+const isValidDate = (v) => !v || (/^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)))
+
+const EMPTY_FORM = () => ({
+  examName: '',
+  shortName: '',
+  governmentType: 'Central',
+  state: '',
+  organization: '',
+  category: '',
+  description: '',
+  // Highlights fields (Section 1)
+  nameAlias: '',                 // "Commonly known as"
+  conductingBody: '',            // Conducting Body
+  examLevel: '',                 // Exam Level
+  examFrequency: '',             // Exam Frequency
+  examMode: '',                  // Exam mode
+  stagesOfRecruitment: '',       // Stages of recruitment
+  examDuration: '',              // Exam Duration
+  language: '',                  // Language
+  examPurpose: '',               // Exam Purpose
+  examHelpdeskNo: '',            // Exam Helpdesk No
+  // Eligibility criteria fields (Section 2)
+  eligibilityNationality: '',    // Nationality
+  eligibilityAgeLimit: '',       // Age Limit
+  // Exam Pattern (Section 3) - reused from existing
+  patternMode: '',
+  patternDuration: '',
+  patternQuestions: '',
+  patternMarks: '',
+  patternSubjects: '',
+  // Syllabus (Section 4)
+  syllabus: '',
+  // Salary+Increments (Section 5)
+  salary: '',
+  salaryIncrements: '',
+  notificationDate: '',
+  applicationStartDate: '',
+  applicationEndDate: '',
+  examDate: '',
+  resultDate: '',
+  officialWebsite: '',
+  notificationUrl: '',
+  applicationUrl: '',
+  sourceUrl: '',
+  status: '',
+})
+
+const splitLines = (v) => (typeof v === 'string' ? v.split('\n').map((x) => x.trim()).filter(Boolean) : Array.isArray(v) ? v : [])
+
+/**
+ * CentralGovExamFormPage — add / edit a Central Government examination record.
+ *   /admin/central-exams/exam/new?org=<orgId>   → create
+ *   /admin/central-exams/exam/:id               → edit
+ */
+export default function CentralGovExamFormPage({ isEdit }) {
+  const { id: examId } = useParams()
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+
+  const [orgs, setOrgs] = useState([])
+  const [form, setForm] = useState(EMPTY_FORM())
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const isCreate = !isEdit && !examId
+
+  useEffect(() => {
+    let alive = true
+    async function init() {
+      setLoading(true)
+      setError('')
+      try {
+        const orgRes = await graduateExamService.getOrganizations({ includeInactive: 1 })
+        if (!alive) return
+        const orgList = orgRes.data || []
+        setOrgs(orgList)
+
+        if (!isCreate) {
+          const examRes = await graduateExamService.getExam(examId)
+          if (!alive) return
+          const e = examRes.data
+          setForm((f) => ({ ...EMPTY_FORM(), ...f, ...mapExamToForm(e) }))
+        } else {
+          const preOrg = searchParams.get('org')
+          setForm(() => ({
+            ...EMPTY_FORM(),
+            organization: preOrg || (orgList.length ? orgList[0]._id : ''),
+            governmentType: orgList.find((o) => o._id === preOrg)?.governmentType || (orgList[0]?.governmentType || 'Central'),
+          }))
+        }
+      } catch (err) {
+        if (alive) setError(err?.response?.data?.message || 'Failed to load form data.')
+      } finally {
+        if (alive) setLoading(false)
+      }
+    }
+    init()
+    return () => { alive = false }
+  }, [examId])
+
+  const mapExamToForm = (e) => ({
+    examName: e.examName || '',
+    shortName: e.shortName || '',
+    governmentType: e.governmentType || '',
+    state: e.state || '',
+    organization: e.organization?._id || e.organization || '',
+    category: e.category || '',
+    description: e.description || '',
+    // Highlights fields (Section 1)
+    nameAlias: e.nameAlias || '',                 // "Commonly known as"
+    conductingBody: e.conductingBody || '',        // Conducting Body
+    examLevel: e.examLevel || '',                  // Exam Level
+    examFrequency: e.examFrequency || '',          // Exam Frequency
+    examMode: e.examMode || '',                    // Exam mode
+    stagesOfRecruitment: e.stagesOfRecruitment || '', // Stages of recruitment
+    examDuration: e.examDuration || '',            // Exam Duration
+    language: e.language || '',                    // Language
+    examPurpose: e.examPurpose || '',              // Exam Purpose
+    examHelpdeskNo: e.examHelpdeskNo || '',       // Exam Helpdesk No
+    // Eligibility criteria fields (Section 2)
+    eligibilityNationality: e.eligibilityNationality || '', // Nationality
+    eligibilityAgeLimit: e.eligibilityAgeLimit || '',     // Age Limit
+    // Exam Pattern (Section 3)
+    patternMode: e.examPattern?.mode || '',
+    patternDuration: e.examPattern?.duration || '',
+    patternQuestions: e.examPattern?.questions || '',
+    patternMarks: e.examPattern?.marks || '',
+    patternSubjects: (e.examPattern?.subjects || []).join('\n'),
+    // Syllabus (Section 4)
+    syllabus: (e.syllabus || []).join('\n'),
+    // Salary+Increments (Section 5)
+    salary: e.salary || '',
+    salaryIncrements: e.salaryIncrements || '',
+    notificationDate: e.notificationDate || '',
+    applicationStartDate: e.applicationStartDate || '',
+    applicationEndDate: e.applicationEndDate || '',
+    examDate: e.examDate || '',
+    resultDate: e.resultDate || '',
+    officialWebsite: e.officialWebsite || '',
+    notificationUrl: e.notificationUrl || '',
+    applicationUrl: e.applicationUrl || '',
+    sourceUrl: e.sourceUrl || '',
+    status: e.status || '',
+  })
+
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
+
+  const handleOrgChange = (e) => {
+    const orgId = e.target.value
+    const org = orgs.find((o) => o._id === orgId)
+    setForm((f) => ({
+      ...f,
+      organization: orgId,
+      governmentType: org?.governmentType || f.governmentType,
+      state: org?.state || f.state,
+    }))
+  }
+
+  const validate = () => {
+    if (!form.examName.trim()) return 'Exam name is required.'
+    if (!form.organization) return 'Recruitment organization is required.'
+    if (!form.governmentType) return 'Government type is required.'
+    for (const [label, value] of [
+      ['Official website', form.officialWebsite],
+      ['Notification URL', form.notificationUrl],
+      ['Application URL', form.applicationUrl],
+      ['Source URL', form.sourceUrl],
+    ]) {
+      if (!isUrl(value)) return `${label} must be a valid http(s) URL (or leave empty).`
+    }
+    if (form.eligibilityAgeLimit !== '' && (Number.isNaN(Number(form.eligibilityAgeLimit)) || Number(form.eligibilityAgeLimit) < 0)) {
+      return 'Age Limit must be a non-negative number.'
+    }
+    if (form.minimumAge !== '' && (Number.isNaN(Number(form.minimumAge)) || Number(form.minimumAge) < 0)) {
+      return 'Minimum age must be a non-negative number.'
+    }
+    if (form.maximumAge !== '' && (Number.isNaN(Number(form.maximumAge)) || Number(form.maximumAge) < 0)) {
+      return 'Maximum age must be a non-negative number.'
+    }
+    if (form.minimumAge !== '' && form.maximumAge !== '' && Number(form.maximumAge) < Number(form.minimumAge)) {
+      return 'Maximum age cannot be less than minimum age.'
+    }
+    for (const [label, value] of [
+      ['Notification date', form.notificationDate],
+      ['Application start date', form.applicationStartDate],
+      ['Application end date', form.applicationEndDate],
+      ['Exam date', form.examDate],
+      ['Result date', form.resultDate],
+    ]) {
+      if (!isValidDate(value)) return `${label} must be a valid date (YYYY-MM-DD) or empty.`
+    }
+    if (form.applicationStartDate && form.applicationEndDate && form.applicationEndDate < form.applicationStartDate) {
+      return 'Application end date cannot be before the application start date.'
+    }
+    return ''
+  }
+
+  const buildPayload = () => ({
+    examName: form.examName.trim(),
+    shortName: form.shortName.trim(),
+    governmentType: form.governmentType,
+    state: form.state.trim(),
+    organization: form.organization,
+    category: form.category,
+    description: form.description,
+    // Highlights fields (Section 1)
+    nameAlias: form.nameAlias.trim(),             // "Commonly known as"
+    conductingBody: form.conductingBody.trim(),   // Conducting Body
+    examLevel: form.examLevel.trim(),             // Exam Level
+    examFrequency: form.examFrequency.trim(),     // Exam Frequency
+    examMode: form.examMode.trim(),               // Exam mode
+    stagesOfRecruitment: form.stagesOfRecruitment.trim(), // Stages of recruitment
+    examDuration: form.examDuration.trim(),       // Exam Duration
+    language: form.language.trim(),               // Language
+    examPurpose: form.examPurpose.trim(),         // Exam Purpose
+    examHelpdeskNo: form.examHelpdeskNo.trim(), // Exam Helpdesk No
+    // Eligibility criteria fields (Section 2)
+    eligibilityNationality: form.eligibilityNationality.trim(), // Nationality
+    eligibilityAgeLimit: form.eligibilityAgeLimit.trim(),     // Age Limit
+    // Exam Pattern (Section 3)
+    examPattern: {
+      mode: form.patternMode,
+      duration: form.patternDuration,
+      questions: form.patternQuestions,
+      marks: form.patternMarks,
+      subjects: splitLines(form.patternSubjects),
+    },
+    syllabus: splitLines(form.syllabus),
+    // Salary+Increments (Section 5)
+    salary: form.salary,
+    salaryIncrements: form.salaryIncrements,
+    notificationDate: form.notificationDate,
+    applicationStartDate: form.applicationStartDate,
+    applicationEndDate: form.applicationEndDate,
+    examDate: form.examDate,
+    resultDate: form.resultDate,
+    officialWebsite: form.officialWebsite.trim(),
+    notificationUrl: form.notificationUrl.trim(),
+    applicationUrl: form.applicationUrl.trim(),
+    sourceUrl: form.sourceUrl.trim(),
+    status: form.status,
+  })
+
+  const handleSave = async () => {
+    const v = validate()
+    if (v) return setError(v)
+    setError('')
+    setSaving(true)
+    try {
+      const payload = buildPayload()
+      const res = isCreate
+        ? await graduateExamService.createExam(payload)
+        : await graduateExamService.updateExam(examId, payload)
+      const savedOrg = res.data?.organization?._id || payload.organization
+      navigate(`/admin/central-exams/organization/${savedOrg}`)
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to save exam.')
+      setSaving(false)
+    }
+  }
+
+  if (loading) return <SLoader />
+
+  const selectedOrg = orgs.find((o) => o._id === form.organization)
+
+  return (
+    <div>
+      <h2 style={{ fontFamily: 'Nunito', fontSize: 22, fontWeight: 900, color: 'var(--text)', margin: '0 0 6px' }}>
+        {isCreate ? 'Add Central Gov Exam' : 'Edit Central Gov Exam'}
+      </h2>
+      <p style={{ margin: '0 0 20px', color: 'var(--text3)', fontSize: 14, fontWeight: 600 }}>
+        {isCreate ? 'Create a new central government examination record.' : `Editing: ${form.examName}`} — optional fields may stay
+        empty; the student pages will show “Refer to the latest official notification” for them.
+      </p>
+
+      {error && <div style={{ marginBottom: 16 }}><SAlert type="error">{error}</SAlert></div>}
+
+      <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 20, padding: 24, marginBottom: 20 }}>
+        <SectionTitle>Highlights</SectionTitle>
+        <FormGrid>
+          <FormGroup label="Name *" full>
+            <FormInput value={form.examName} onChange={set('examName')} placeholder="e.g. UPSC Civil Services Exam" />
+          </FormGroup>
+          <FormGroup label="Commonly known as">
+            <FormInput value={form.nameAlias} onChange={set('nameAlias')} placeholder="e.g. IAS Exam" />
+          </FormGroup>
+          <FormGroup label="Conducting Body">
+            <FormInput value={form.conductingBody} onChange={set('conductingBody')} placeholder="e.g. UPSC" />
+          </FormGroup>
+          <FormGroup label="Exam Level">
+            <FormInput value={form.examLevel} onChange={set('examLevel')} placeholder="e.g. National" />
+          </FormGroup>
+          <FormGroup label="Exam Frequency">
+            <FormInput value={form.examFrequency} onChange={set('examFrequency')} placeholder="e.g. Annual" />
+          </FormGroup>
+          <FormGroup label="Exam Mode">
+            <FormInput value={form.examMode} onChange={set('examMode')} placeholder="e.g. Online" />
+          </FormGroup>
+          <FormGroup label="Stages of Recruitment">
+            <FormInput value={form.stagesOfRecruitment} onChange={set('stagesOfRecruitment')} placeholder="e.g. Preliminary, Main, Interview" />
+          </FormGroup>
+          <FormGroup label="Exam Duration">
+            <FormInput value={form.examDuration} onChange={set('examDuration')} placeholder="e.g. 3 hours" />
+          </FormGroup>
+          <FormGroup label="Language">
+            <FormInput value={form.language} onChange={set('language')} placeholder="e.g. English" />
+          </FormGroup>
+          <FormGroup label="Exam Purpose">
+            <FormInput value={form.examPurpose} onChange={set('examPurpose')} placeholder="e.g. Recruitment to civil services" />
+          </FormGroup>
+          <FormGroup label="Exam Helpdesk No">
+            <FormInput value={form.examHelpdeskNo} onChange={set('examHelpdeskNo')} placeholder="e.g. 1800-123-4567" />
+          </FormGroup>
+        </FormGrid>
+      </div>
+
+      <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 20, padding: 24, marginBottom: 20 }}>
+        <SectionTitle>Eligibility Criteria</SectionTitle>
+        <FormGrid>
+          <FormGroup label="Nationality">
+            <FormInput value={form.eligibilityNationality} onChange={set('eligibilityNationality')} placeholder="e.g. Indian" />
+          </FormGroup>
+          <FormGroup label="Age Limit">
+            <FormInput type="number" min="0" value={form.eligibilityAgeLimit} onChange={set('eligibilityAgeLimit')} placeholder="e.g. 30" />
+          </FormGroup>
+        </FormGrid>
+      </div>
+
+      <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 20, padding: 24, marginBottom: 20 }}>
+        <SectionTitle>Exam Pattern</SectionTitle>
+        <FormGrid>
+          <FormGroup label="Pattern — Mode">
+            <FormInput value={form.patternMode} onChange={set('patternMode')} placeholder="Objective / CBT / Descriptive" />
+          </FormGroup>
+          <FormGroup label="Pattern — Duration">
+            <FormInput value={form.patternDuration} onChange={set('patternDuration')} placeholder="e.g. 3 hours" />
+          </FormGroup>
+          <FormGroup label="Pattern — Questions">
+            <FormInput value={form.patternQuestions} onChange={set('patternQuestions')} placeholder="e.g. 200" />
+          </FormGroup>
+          <FormGroup label="Pattern — Marks">
+            <FormInput value={form.patternMarks} onChange={set('patternMarks')} placeholder="e.g. 300" />
+          </FormGroup>
+          <FormGroup label="Pattern — Subjects (one per line)" full>
+            <FormInput as="textarea" value={form.patternSubjects} onChange={set('patternSubjects')} placeholder={'General Studies\nAptitude & Mental Ability'} />
+          </FormGroup>
+        </FormGrid>
+      </div>
+
+      <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 20, padding: 24, marginBottom: 20 }}>
+        <SectionTitle>Syllabus</SectionTitle>
+        <FormGrid>
+          <FormGroup label="Syllabus (one per line)" full>
+            <FormInput as="textarea" value={form.syllabus} onChange={set('syllabus')} placeholder={'General Studies — history, geography, polity…\nAptitude & Mental Ability'} />
+          </FormGroup>
+        </FormGrid>
+      </div>
+
+      <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 20, padding: 24, marginBottom: 20 }}>
+        <SectionTitle>Salary + Increments</SectionTitle>
+        <FormGrid>
+          <FormGroup label="Salary / Remuneration" full>
+            <FormInput value={form.salary} onChange={set('salary')} placeholder="Leave empty unless from the current notification" />
+          </FormGroup>
+          <FormGroup label="Salary Increments">
+            <FormInput value={form.salaryIncrements} onChange={set('salaryIncrements')} placeholder="e.g. 3% annual increment" />
+          </FormGroup>
+        </FormGrid>
+      </div>
+
+      <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 20, padding: 24, marginBottom: 20 }}>
+        <SectionTitle>Dates</SectionTitle>
+        <FormGrid>
+          <FormGroup label="Notification Date">
+            <FormInput type="date" value={form.notificationDate} onChange={set('notificationDate')} />
+          </FormGroup>
+          <FormGroup label="Result Date">
+            <FormInput type="date" value={form.resultDate} onChange={set('resultDate')} />
+          </FormGroup>
+          <FormGroup label="Application Start Date">
+            <FormInput type="date" value={form.applicationStartDate} onChange={set('applicationStartDate')} />
+          </FormGroup>
+          <FormGroup label="Application End Date">
+            <FormInput type="date" value={form.applicationEndDate} onChange={set('applicationEndDate')} />
+          </FormGroup>
+          <FormGroup label="Exam Date">
+            <FormInput type="date" value={form.examDate} onChange={set('examDate')} />
+          </FormGroup>
+        </FormGrid>
+      </div>
+
+      <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 20, padding: 24, marginBottom: 20 }}>
+        <SectionTitle>Links</SectionTitle>
+        <FormGrid>
+          <FormGroup label="Official Website" full>
+            <FormInput value={form.officialWebsite} onChange={set('officialWebsite')} placeholder="https://www.upsc.gov.in" />
+          </FormGroup>
+          <FormGroup label="Notification URL" full>
+            <FormInput value={form.notificationUrl} onChange={set('notificationUrl')} placeholder="Official notification PDF/link for the current cycle" />
+          </FormGroup>
+          <FormGroup label="Application URL" full>
+            <FormInput value={form.applicationUrl} onChange={set('applicationUrl')} placeholder="Only when the application portal is verified and live" />
+          </FormGroup>
+          <FormGroup label="Source / Reference URL" full>
+            <FormInput value={form.sourceUrl} onChange={set('sourceUrl')} placeholder="e.g. https://apply.upscexams.in/notification?app_id=… (reference only)" />
+          </FormGroup>
+        </FormGrid>
+      </div>
+
+      <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 20, padding: 24, marginBottom: 20 }}>
+        <SectionTitle>Status</SectionTitle>
+        <FormGrid>
+          <FormGroup label="Status" full>
+            <FormInput as="select" value={form.status} onChange={set('status')}>
+              <option value="">TBA — check latest official notification</option>
+              {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+            </FormInput>
+          </FormGroup>
+        </FormGrid>
+        {selectedOrg && (
+          <p style={{ margin: '10px 0 0', fontSize: 12.5, color: 'var(--text3)', fontWeight: 600 }}>
+            Saving to: {selectedOrg.name} ({form.governmentType})
+          </p>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+        <SBtn variant="outline" onClick={() => navigate(-1)}>Cancel</SBtn>
+        <SBtn onClick={handleSave} disabled={saving}>
+          {saving ? 'Saving…' : (isCreate ? 'Create Exam' : 'Save Changes')}
+        </SBtn>
+      </div>
+    </div>
+  )
+}
+
+function SectionTitle({ children }) {
+  return (
+    <h3 style={{
+      margin: '0 0 16px', fontFamily: 'Nunito', fontSize: 15, fontWeight: 900,
+      color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em',
+      paddingBottom: 10, borderBottom: '1.5px solid var(--border)',
+    }}>
+      {children}
+    </h3>
+  )
+}
