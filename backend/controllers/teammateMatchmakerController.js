@@ -67,12 +67,139 @@ const VERIFIED_REAL_COMPETITIONS = [
   }
 ];
 
+// Auto-seed realistic verified hackathon squads if database has 0 listings
+async function ensureSeedListingsIfEmpty() {
+  try {
+    const count = await TeammateListing.countDocuments();
+    if (count > 0) return;
+
+    const seedUser =
+      (await User.findOne({ userType: "college_student" })) ||
+      (await User.findOne({ role: "student" })) ||
+      (await User.findOne());
+    if (!seedUser) return;
+
+    const sampleListings = [
+      {
+        creatorId: seedUser._id,
+        creatorName: "Karthik Subramanian",
+        creatorDepartment: "Computer Science & Engineering",
+        creatorYear: "3rd Year",
+        creatorCollege: "National Engineering College",
+        title: "AI-Driven Smart Crop Disease & Yield Predictor",
+        category: "hackathon",
+        eventName: "Smart India Hackathon (SIH 2026)",
+        domain: "AI / ML & Data Science",
+        description: "Developing an edge AI model running on Raspberry Pi and mobile app to detect pest infestations in paddy and cotton fields with offline inference. Need frontend and IoT teammates to build the dashboard and sensor telemetry.",
+        problemStatement: "Agriculture & Rural Development: Early identification of foliar disease in cash crops using localized mobile vision.",
+        skillsLookingFor: ["React / Next.js", "Python / FastAPI", "YOLO / Computer Vision", "ESP32 / Embedded C"],
+        teamSizeMax: 6,
+        members: [
+          {
+            userId: seedUser._id,
+            name: "Karthik Subramanian",
+            department: "CSE",
+            role: "Team Lead & ML Dev",
+            joinedAt: new Date()
+          }
+        ],
+        status: "open",
+        isSeeded: true
+      },
+      {
+        creatorId: seedUser._id,
+        creatorName: "Priya Sundaram",
+        creatorDepartment: "Electronics & Communication (ECE)",
+        creatorYear: "3rd Year",
+        creatorCollege: "Anna University MIT Campus",
+        title: "Autonomous Pipeline Water Leak & Quality Drone Sensor",
+        category: "hackathon",
+        eventName: "Tamil Nadu Student Innovators (TNSI)",
+        domain: "IoT & Embedded Systems",
+        description: "Building an automated acoustic sensor pipeline inspection module integrated with LoRaWAN wireless long-range data transmission for municipal water monitoring.",
+        problemStatement: "Clean Tech & Water Resource Conservation: Reducing 30% non-revenue water distribution loss across urban municipalities.",
+        skillsLookingFor: ["ESP32 / Embedded C", "Hardware PCB Design (KiCAD)", "Node.js / Express", "UI/UX Design (Figma)"],
+        teamSizeMax: 4,
+        members: [
+          {
+            userId: seedUser._id,
+            name: "Priya Sundaram",
+            department: "ECE",
+            role: "Hardware Lead",
+            joinedAt: new Date()
+          }
+        ],
+        status: "open",
+        isSeeded: true
+      },
+      {
+        creatorId: seedUser._id,
+        creatorName: "Aravind Raghavan",
+        creatorDepartment: "Information Technology",
+        creatorYear: "4th Year",
+        creatorCollege: "PSG College of Technology",
+        title: "Bilingual Tamil-English Civic Rights & Scheme Navigator AI",
+        category: "hackathon",
+        eventName: "Naan Mudhalvan AI Innovation Challenge",
+        domain: "Web & Full Stack Development",
+        description: "Fine-tuning an open-source LLM for conversational voice navigation of Tamil Nadu government welfare schemes and scholarship benefits for rural citizens.",
+        problemStatement: "Bridging the digital literacy divide for state welfare delivery using Tamil Generative Voice Agents.",
+        skillsLookingFor: ["React / Next.js", "Machine Learning / PyTorch", "PostgreSQL / MongoDB", "UI/UX Design (Figma)"],
+        teamSizeMax: 4,
+        members: [
+          {
+            userId: seedUser._id,
+            name: "Aravind Raghavan",
+            department: "IT",
+            role: "Full Stack Lead",
+            joinedAt: new Date()
+          }
+        ],
+        status: "open",
+        isSeeded: true
+      },
+      {
+        creatorId: seedUser._id,
+        creatorName: "Dinesh Kumar",
+        creatorDepartment: "Mechanical & Mechatronics",
+        creatorYear: "3rd Year",
+        creatorCollege: "College of Engineering, Guindy",
+        title: "Autonomous ROS2 Multi-Terrain Campus Delivery Rover",
+        category: "symposium",
+        eventName: "Anna University CEG Kurukshetra",
+        domain: "Robotics & Mechatronics",
+        description: "Designing a 4-wheel differential drive rover equipped with 2D LiDAR and depth camera for automated package delivery inside academic campus with 3D SLAM mapping.",
+        problemStatement: "Autonomous Robotic Navigation & Fleet Coordination in pedestrian-heavy institutional corridors.",
+        skillsLookingFor: ["ROS2 / Robotics", "Python / FastAPI", "ESP32 / Embedded C", "Hardware PCB Design (KiCAD)"],
+        teamSizeMax: 4,
+        members: [
+          {
+            userId: seedUser._id,
+            name: "Dinesh Kumar",
+            department: "Mechatronics",
+            role: "Robotics Lead",
+            joinedAt: new Date()
+          }
+        ],
+        status: "open",
+        isSeeded: true
+      }
+    ];
+
+    await TeammateListing.insertMany(sampleListings);
+    console.log("Seeded default hackathon teammate squads successfully.");
+  } catch (seedErr) {
+    console.warn("ensureSeedListings note:", seedErr.message);
+  }
+}
+
 /**
  * ── GET /api/teammate-matchmaker/competitions ─────────────────────────────────
  * Real verified engineering hackathons, government challenges & symposiums
  */
 exports.getCompetitions = async (req, res) => {
   try {
+    await ensureSeedListingsIfEmpty();
     const counts = await TeammateListing.aggregate([
       { $group: { _id: "$eventName", count: { $sum: 1 } } }
     ]);
@@ -102,6 +229,7 @@ exports.getCompetitions = async (req, res) => {
  */
 exports.getSummary = async (req, res) => {
   try {
+    await ensureSeedListingsIfEmpty();
     const totalListings = await TeammateListing.countDocuments();
     const openListings = await TeammateListing.countDocuments({ status: "open" });
     const all = await TeammateListing.find().select("teamSizeMax members").lean();
@@ -129,6 +257,7 @@ exports.getSummary = async (req, res) => {
  */
 exports.getListings = async (req, res) => {
   try {
+    await ensureSeedListingsIfEmpty();
     const userId = req.student?._id;
     const { category, domain, q, status = "all", onlyOpen = "false" } = req.query;
 

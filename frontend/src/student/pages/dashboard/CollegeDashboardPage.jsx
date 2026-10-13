@@ -444,7 +444,7 @@ export default function CollegeDashboardPage() {
             </SCard>
           )}
 
-          {/* DYNAMIC DOMAIN CARD: ENGINEERING HACKATHON & PROJECT TEAMMATE MATCHMAKER */}
+          {/* DYNAMIC DOMAIN CARD: HACKATHON & PROJECT TEAMMATE FINDER */}
           {flags.hackathonTeammates && !hiddenWidgetIds.includes('hackathon-teammates') && (
             <SCard style={{
               padding: 28,
@@ -458,12 +458,12 @@ export default function CollegeDashboardPage() {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                 <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--s-text)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 22 }}>🚀</span> Hackathon &amp; Project "Teammate Matchmaker"
+                  <span style={{ fontSize: 22 }}>🚀</span> Hackathon Teammate Finder
                 </div>
-                <SBadge color="purple">Engineering Exclusive Hub</SBadge>
+                <SBadge color="purple">Hackathon &amp; Project Squads</SBadge>
               </div>
               <p style={{ fontSize: 13, color: 'var(--s-text3)', margin: '0 0 16px', lineHeight: 1.6 }}>
-                Form your dream team for <strong>Smart India Hackathon (SIH 2026)</strong>, Tamil Nadu State Innovation Challenges, College Symposiums, and Mini/Final-Year Engineering Projects. Find peers with complementary skills (React, AI/ML, IoT Hardware, ROS2, VLSI) and start collaborating immediately.
+                Form your dream team for <strong>Smart India Hackathon (SIH 2026)</strong>, Tamil Nadu State Innovation Challenges, College Symposiums, and Mini/Final-Year Projects. Find peers with complementary skills (React, AI/ML, IoT Hardware, ROS2, VLSI, Design) and start collaborating immediately.
               </p>
 
               {/* Real Verified Hackathon & Competition Badges */}
@@ -492,7 +492,7 @@ export default function CollegeDashboardPage() {
                     display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 14px rgba(79,70,229,0.3)'
                   }}
                 >
-                  <FiUsers size={16} /> Explore Open Teams →
+                  <FiUsers size={16} /> Explore Open Squads →
                 </button>
                 <button
                   type="button"
@@ -708,6 +708,7 @@ export default function CollegeDashboardPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {[
+                { label: 'Hackathon Squads', path: '/college/teammate-matchmaker', bg: '#e0e7ff', color: '#4338ca', icon: FiUsers },
                 { label: 'Focus Mode', path: '/college/academic/focus', bg: '#0284c7', color: '#fff', icon: FiClock },
                 { label: practiceConfig.navLabel, path: '/college/practice', bg: '#ede9fe', color: '#6d28d9', icon: practiceConfig.isComputing ? FiCode : FiActivity },
                 { label: 'Ask AI', path: '/college/advisor/chat', bg: '#f1f5f9', color: '#475569', icon: FiCompass },

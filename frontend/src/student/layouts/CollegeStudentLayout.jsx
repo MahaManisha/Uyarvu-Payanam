@@ -59,11 +59,12 @@ const SIDEBAR_SECTIONS = [
   {
     title: 'Community & Resources',
     items: [
-      { id: 'peer-chat',    icon: FiMessageSquare, label: 'Peer Chat',       to: '/college/peer-chat' },
-      { id: 'mentors',      icon: FiUsers,         label: 'Peer Mentors',    to: '/college/community/mentors' },
-      { id: 'doubts',       icon: FiHelpCircle,    label: 'Doubt Resolution', to: '/college/community/doubts' },
-      { id: 'scholarships', icon: FiAward,         label: 'Scholarships',    to: '/college/scholarships' },
-      { id: 'bookmarks',    icon: FiBookmark,      label: 'Saved Items',     to: '/college/bookmarks' },
+      { id: 'teammates',    icon: FiUsers,         label: 'Hackathon Teammate Finder', to: '/college/teammate-matchmaker', badge: '🔥 SQUAD' },
+      { id: 'peer-chat',    icon: FiMessageSquare, label: 'Peer Chat',                 to: '/college/peer-chat' },
+      { id: 'mentors',      icon: FiUsers,         label: 'Peer Mentors',              to: '/college/community/mentors' },
+      { id: 'doubts',       icon: FiHelpCircle,    label: 'Doubt Resolution',          to: '/college/community/doubts' },
+      { id: 'scholarships', icon: FiAward,         label: 'Scholarships',              to: '/college/scholarships' },
+      { id: 'bookmarks',    icon: FiBookmark,      label: 'Saved Items',               to: '/college/bookmarks' },
     ],
   },
 ]
@@ -81,22 +82,19 @@ function CollegeLayoutInner() {
 
   const isGamified = themeKey === 'gamified'
 
-  // Dynamically inject Engineering-only Teammate Matchmaker in Community section
-  const dynamicSidebarSections = SIDEBAR_SECTIONS.map(sec => {
-    if (sec.title === 'Community & Resources' && flags.hackathonTeammates) {
-      const alreadyHas = sec.items.some(i => i.id === 'teammates')
-      if (!alreadyHas) {
-        return {
-          ...sec,
-          items: [
-            { id: 'teammates', icon: FiUsers, label: 'Teammate Matchmaker', to: '/college/teammate-matchmaker', isEngineering: true },
-            ...sec.items
-          ]
-        }
-      }
-    }
-    return sec
-  })
+  // Filter sidebar sections if user uses search bar
+  const dynamicSidebarSections = React.useMemo(() => {
+    if (!searchQuery.trim()) return SIDEBAR_SECTIONS
+    const q = searchQuery.toLowerCase().trim()
+    return SIDEBAR_SECTIONS.map(sec => ({
+      ...sec,
+      items: sec.items.filter(item =>
+        item.label.toLowerCase().includes(q) ||
+        item.id.toLowerCase().includes(q) ||
+        (item.badge && item.badge.toLowerCase().includes(q))
+      )
+    })).filter(sec => sec.items.length > 0)
+  }, [searchQuery])
 
   const handleLogout = () => {
     logout()
@@ -207,7 +205,7 @@ function CollegeLayoutInner() {
 
               {/* Nav Items */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {section.items.map(({ id, icon: Icon, label, to }) => {
+                {section.items.map(({ id, icon: Icon, label, to, badge }) => {
                   const active = isActive(to)
                   return (
                     <Link
@@ -229,12 +227,12 @@ function CollegeLayoutInner() {
                     >
                       <Icon size={15} />
                       <span style={{ flex: 1 }}>{label}</span>
-                      {id === 'teammates' && !active && (
+                      {badge && !active && (
                         <span style={{
                           fontSize: 8, fontWeight: 900,
                           background: 'rgba(99,102,241,0.25)', color: '#818cf8',
                           padding: '2px 6px', borderRadius: 5, letterSpacing: '0.05em'
-                        }}>ENG</span>
+                        }}>{badge}</span>
                       )}
                       {section.ai && !active && (
                         <span style={{

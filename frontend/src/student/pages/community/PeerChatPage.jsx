@@ -311,10 +311,12 @@ export default function PeerChatPage() {
   useEffect(() => { 
     loadConversations()
     searchStudents('')
-    if (location.state?.peerId) {
+    if (location.state?.conversationId) {
+      openConvo({ _id: location.state.conversationId, peerName: location.state.teamTitle || 'Team Chat' })
+    } else if (location.state?.peerId && location.state.peerId !== myId) {
       startChat(location.state.peerId, location.state.peerName || 'Peer')
     }
-  }, [location.state?.peerId])
+  }, [location.state?.peerId, location.state?.conversationId])
 
   // ── Open a conversation ───────────────────────────────────────────────────
   const openConvo = async (convo) => {

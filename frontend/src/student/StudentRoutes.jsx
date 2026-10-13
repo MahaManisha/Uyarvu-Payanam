@@ -455,6 +455,11 @@ export default function StudentRoutes() {
             <Route path="study-tools/notes-summarizer" element={<NotesSummarizerPage />} />
             <Route path="study-tools/practice" element={<PracticeQuestionsPage />} />
             <Route path="teammate-matchmaker" element={<TeammateMatchmakerPage />} />
+            <Route path="hackathon-teammates" element={<Navigate to="/college/teammate-matchmaker" replace />} />
+            <Route path="hackathon-teammate-finder" element={<Navigate to="/college/teammate-matchmaker" replace />} />
+            <Route path="teammate-finder" element={<Navigate to="/college/teammate-matchmaker" replace />} />
+            <Route path="community/teammates" element={<Navigate to="/college/teammate-matchmaker" replace />} />
+            <Route path="career/teammate-matchmaker" element={<Navigate to="/college/teammate-matchmaker" replace />} />
             <Route path="community/mentors" element={<PeerMentorshipPage />} />
             <Route path="community/doubts" element={<DoubtResolutionPage />} />
             <Route path="peer-chat" element={<PeerChatPage />} />
