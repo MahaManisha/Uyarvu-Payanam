@@ -411,7 +411,6 @@ export default function StudentRoutes() {
             <Route path="student/graduate/exams" element={<GraduateExamsPage />} />
             <Route path="student/graduate/higher-studies" element={<HigherStudiesExplorePage />} />
             <Route path="student/graduate/higher-studies/:id" element={<HigherStudiesDetailPage />} />
-            <Route path="student/graduate/roadmap" element={<GraduateRoadmapPage />} />
             <Route path="student/graduate/placement" element={<GraduatePlacementPage />} />
             <Route path="student/graduate/interview" element={<GraduateInterviewPage />} />
             <Route path="student/graduate/resume" element={<GraduateResumePage />} />
@@ -428,7 +427,6 @@ export default function StudentRoutes() {
           <Route path="graduate/skill-gap" element={<Navigate to="/student/graduate/skill-gap" replace />} />
           <Route path="graduate/exams" element={<Navigate to="/student/graduate/exams" replace />} />
           <Route path="graduate/higher-studies" element={<Navigate to="/student/graduate/higher-studies" replace />} />
-          <Route path="graduate/roadmap" element={<Navigate to="/student/graduate/roadmap" replace />} />
           <Route path="graduate/placement" element={<Navigate to="/student/graduate/placement" replace />} />
           <Route path="graduate/interview" element={<Navigate to="/student/graduate/interview" replace />} />
           <Route path="graduate/resume" element={<Navigate to="/student/graduate/resume" replace />} />
@@ -494,10 +492,6 @@ export default function StudentRoutes() {
             <Route path="ai-advisor" element={<Navigate to="../advisor" replace />} />
             <Route path="careers" element={<GraduateCareersPage />} />
             <Route path="skill-gap" element={<GraduateSkillGapPage />} />
-            <Route path="roadmap" element={<GraduateRoadmapPage />} />
-            <Route path="roadmap/:examId" element={<GraduateRoadmapPage />} />
-            <Route path="roadmap/:examId/topic/:topicId" element={<GraduateTopicDetailPage />} />
-            <Route path="exams/:examId" element={<GraduateRoadmapPage />} />
             <Route path="placement" element={<GraduatePlacementPage />} />
             <Route path="interview" element={<GraduateInterviewPage />} />
             <Route path="resume-builder" element={<GraduateResumeBuilderPage />} />
