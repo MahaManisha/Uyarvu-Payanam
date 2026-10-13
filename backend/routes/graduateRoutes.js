@@ -32,13 +32,16 @@ const {
   updateMentorProfile
 } = require("../controllers/graduateMentorController");
 
+// Dedicated Graduate AI Advisor controller (real, profile-grounded AI).
+const { chatWithGraduateAdvisor } = require("../controllers/graduateAdvisorController");
+
 const {
-  askAdvisorChat,
   generateResumeSuggestions,
   saveResumeVersion,
   getResumeVersions,
   deleteResumeVersion,
   generateAiSummary,
+  analyzeResumeJd,
   getAtsPresets,
   checkResumeAtsScore,
   getAtsHistory
@@ -132,7 +135,7 @@ router.post(
   "/advisor/chat",
   verifyStudent,
   rateLimit({ keyFn: (req) => `grad-chat:${req.student._id || req.student?.id}`, max: 30, windowMs: 60000 }),
-  askAdvisorChat
+  chatWithGraduateAdvisor
 );
 
 // ── Peer Mentorship (Graduate-side) ─────────────────────────
@@ -151,6 +154,7 @@ router.get("/resume/versions", verifyStudent, getResumeVersions);
 router.post("/resume/save", verifyStudent, saveResumeVersion);
 router.delete("/resume/:id", verifyStudent, deleteResumeVersion);
 router.post("/resume/generate-summary", verifyStudent, generateAiSummary);
+router.post("/resume/analyze", verifyStudent, analyzeResumeJd);
 
 router.get("/ats-presets", verifyStudent, getAtsPresets);
 router.post("/ats-checker", verifyStudent, uploadResume.single("resumeFile"), checkResumeAtsScore);
