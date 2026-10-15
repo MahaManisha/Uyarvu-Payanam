@@ -7,7 +7,7 @@ const { seedCseCareerDiscoveryQuestions } = require("../seeders/seedCseCareerDis
 const { NORMALIZED_DOMAINS } = require("../config/domainMappingConfig");
 
 // Sanitize question document before sending to frontend (Section 21 Security Rule)
-const sanitizeQuestionForClient = (qDoc) => {
+const sanitizeQuestionForClient = (qDoc, clientBranch) => {
   const q = qDoc.toObject ? qDoc.toObject() : qDoc;
 
   const sanitizedOptions = (q.options || []).map((opt, idx) => ({
@@ -18,7 +18,7 @@ const sanitizeQuestionForClient = (qDoc) => {
   return {
     _id: q._id,
     questionId: q.questionId,
-    branch: q.branch || "CSE",
+    branch: clientBranch || q.branch || "CSE",
     domainId: q.domainId || q.domain,
     domainName: q.domainName || q.category || q.domain,
     difficulty: q.difficulty,
@@ -140,9 +140,11 @@ const getAhpFuzzyQuestions = async (req, res) => {
 
     const branchStr = (rawBranch || "CSE").toString().toLowerCase();
     const isECE = branchStr.includes("ece") || branchStr.includes("electronics") || branchStr.includes("communication");
-    const normalizedBranch = isECE ? "ECE" : "CSE";
-    // Strict branch isolation: ECE students get ONLY ECE questions; CSE students get ONLY CSE questions
-    const branchFilter = isECE ? { $in: ["ECE", "ece"] } : { $in: ["CSE", "cse"] };
+    const isIT = branchStr.includes("it (") || branchStr === "it" || branchStr.includes("information technology");
+    const isAIDS = branchStr.includes("ai & ds") || branchStr.includes("artificial intelligence") || branchStr.includes("aids");
+    const normalizedBranch = isECE ? "ECE" : (isIT ? "IT" : (isAIDS ? "AI & DS" : "CSE"));
+    // Strict branch isolation: ECE students get ONLY ECE questions; Computing students (CSE, IT, AI & DS) access the unified 7-domain question pool
+    const branchFilter = isECE ? { $in: ["ECE", "ece"] } : { $in: ["CSE", "cse", "IT", "it", "AI & DS", "ai & ds", "AIDS", "aids"] };
 
     console.log("[DISCOVERY API] rawBranch:", rawBranch, "normalizedBranch:", normalizedBranch);
     console.log("[DISCOVERY API] userId:", userId || "guest");
@@ -281,7 +283,7 @@ const getAhpFuzzyQuestions = async (req, res) => {
       }
 
       // Sanitize questions (STEP 9: Hide correctOption from client payload)
-      selectedQuestions.push(...chosenForDomain.map(sanitizeQuestionForClient));
+      selectedQuestions.push(...chosenForDomain.map(q => sanitizeQuestionForClient(q, normalizedBranch)));
     }
 
     const assessmentId = `sess_${userId ? userId.toString() : "guest"}_${Date.now()}`;
@@ -401,7 +403,8 @@ const evaluateStudentAssessment = async (req, res) => {
 
     // PART 11 & PART 13: If assessment is evaluated and user logged in, persist the recommendation
     if (userId && evaluation.recommendedDomain) {
-      const detectedBranch = (questions.some(q => q.branch === "ECE")) ? "ECE" : "CSE";
+      const isEceAssessed = questions.some(q => q.branch === "ECE");
+      const detectedBranch = isEceAssessed ? "ECE" : (rawBranch || "CSE");
       const resultData = {
         userId,
         studentId: userId.toString(),
@@ -494,9 +497,9 @@ const getDiscoveryResult = async (req, res) => {
           score: Number((d.weight || d.scorePercent / 100 || 0.5).toFixed(4))
         }));
 
-        const isEceStudent = (studentProfile?.domain && /ece|electronics|communication/i.test(studentProfile.domain)) ||
-                             (ahpProfile?.branchId && /ece|electronics|communication/i.test(ahpProfile.branchId));
-        const detectedBranch = isEceStudent ? "ECE" : "CSE";
+        const studentBranchRaw = studentProfile?.domain || ahpProfile?.branchId || "CSE";
+        const isEceStudent = /ece|electronics|communication/i.test(studentBranchRaw);
+        const detectedBranch = isEceStudent ? "ECE" : studentBranchRaw;
 
         result = {
           userId,

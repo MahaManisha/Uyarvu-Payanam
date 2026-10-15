@@ -349,8 +349,8 @@ const SPECIALIZATION_MAP = {
 // Fallback domain maps grouped by core branch if no specializations were selected
 const BRANCH_DEFAULT_DOMAINS = {
   cse: ["software_engineering", "ai_ml", "cyber_security", "algorithms_systems", "data_science"],
-  it: ["full_stack", "cloud_devops", "cyber_security", "data_science"],
-  aids: ["ai_ml", "data_science", "full_stack", "cloud_devops"],
+  it: ["software_engineering", "ai_ml", "cyber_security", "algorithms_systems", "data_science"],
+  aids: ["software_engineering", "ai_ml", "cyber_security", "algorithms_systems", "data_science"],
   ece: [
     "vlsi_chip_design",
     "embedded_systems",
