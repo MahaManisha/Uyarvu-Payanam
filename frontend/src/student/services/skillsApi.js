@@ -4,11 +4,10 @@ import axios from 'axios'
 // answer keys never reach the browser; the server grades every answer, enforces
 // level unlocks, records milestones and drives the LD-NBSE recommendation.
 
+import { API_BASE_URL } from '../../config/apiConfig'
+
 const skillsApi = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_URL ||
-    import.meta.env.VITE_API_BASE_URL ||
-    'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
   timeout: 20000,
 })
 

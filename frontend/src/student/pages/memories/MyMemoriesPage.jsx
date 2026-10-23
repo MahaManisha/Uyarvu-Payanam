@@ -16,8 +16,10 @@ import {
 import { SCard, SBtn, SBadge, SLoader } from '../../components/ui'
 import { memoryApi, MEMORY_TYPES, memoryTypeLabel } from '../../services/memoryApi'
 
-const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
-const API_ORIGIN = API_BASE.replace(/\/$/, '').replace(/\/api$/, '')
+import { API_BASE_URL, SOCKET_BASE_URL } from '../../../config/apiConfig'
+
+const API_BASE = API_BASE_URL
+const API_ORIGIN = SOCKET_BASE_URL
 
 const TYPE_ICONS = { voice: <FiMic size={15} />, journal: <FiBook size={15} />, email: <FiMail size={15} />, document: <FiFileText size={15} />, story: <FiEdit3 size={15} /> }
 const STATUS_STYLE = {

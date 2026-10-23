@@ -8,8 +8,10 @@ import axios from 'axios'
 // falls back to a localStorage mirror so a child can still play and earn —
 // progress is marked "saved on this device" and will sync once the API is up.
 
+import { API_BASE_URL } from '../../config/apiConfig'
+
 const englishApi = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
   timeout: 10000,
 })
 

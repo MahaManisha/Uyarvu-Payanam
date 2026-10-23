@@ -1,8 +1,9 @@
 import axios from 'axios'
+import { API_BASE_URL } from '../../config/apiConfig'
 
 const studentApi = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
-  timeout: 12000,
+  baseURL: API_BASE_URL,
+  timeout: 15000,
 })
 
 studentApi.interceptors.request.use((config) => {

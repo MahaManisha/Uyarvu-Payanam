@@ -8,8 +8,10 @@ import { seedMathsWorlds } from './mathsSeedData'
 // world list still has a seed fallback so the (public) map renders offline,
 // but there is NO offline gameplay.
 
+import { API_BASE_URL } from '../../config/apiConfig'
+
 const mathsApi = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
   timeout: 10000,
 })
 

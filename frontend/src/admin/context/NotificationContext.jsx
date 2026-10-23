@@ -33,7 +33,9 @@ import { notificationService } from '../../services/notificationService'
 
 const NotificationContext = createContext()
 
-const SOCKET_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api\/?$/, '')
+import { SOCKET_BASE_URL } from '../../config/apiConfig'
+
+const SOCKET_URL = SOCKET_BASE_URL
 
 export function NotificationProvider({ children }) {
     // ── Sent-history list (what admin has dispatched) ─────────────────────

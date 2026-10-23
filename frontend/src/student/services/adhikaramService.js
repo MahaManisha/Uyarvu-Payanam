@@ -4,8 +4,10 @@ import { seedAdhikarams, findSeedAdhikaram } from './adhikaramSeedData'
 // Dedicated instance WITHOUT the 401-redirect interceptor used by studentApi:
 // if the student is not logged in (demo/browse mode) we gracefully fall back
 // to the seeded mirror instead of hard-redirecting to /student/signin.
+import { API_BASE_URL } from '../../config/apiConfig'
+
 const adhikaramApi = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
   timeout: 8000,
 })
 

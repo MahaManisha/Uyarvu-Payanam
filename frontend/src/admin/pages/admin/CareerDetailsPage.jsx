@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Card, PrimaryBtn } from '../../components/UI';
 import { careerPathService } from '../../../services/careerPathService';
+import { API_BASE_URL } from '../../../config/apiConfig';
 
 const LEVEL_COLORS = {
   '5th': '#8b5cf6',
@@ -42,8 +43,7 @@ export default function CareerDetailsPage() {
         }
 
         // 2. Fetch scholarships and filter manually
-        const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
-        const scholarRes = await axios.get(`${API_BASE}/scholarships`);
+        const scholarRes = await axios.get(`${API_BASE_URL}/scholarships`);
         const levelNum = level.replace(/\D/g, ''); // extracts '5', '8', '10', '12'
         const related = scholarRes.data.filter(s => {
           if (!s.eligibility) return false;

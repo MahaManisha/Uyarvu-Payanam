@@ -7,13 +7,12 @@ import { getStudentId } from './mathsMissionsService'
 // logged-in student. The localStorage mirror (mathsMissionsService) is only
 // used as a fallback identity key and for the legacy mission map page.
 
+import { API_BASE_URL } from '../../config/apiConfig'
+
 // Dedicated instance WITHOUT the studentApi 401-redirect interceptor
 // (matches mathsService.js / scienceService.js).
 const missionsApi = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_URL ||
-    import.meta.env.VITE_API_BASE_URL ||
-    'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
   timeout: 12000,
 })
 

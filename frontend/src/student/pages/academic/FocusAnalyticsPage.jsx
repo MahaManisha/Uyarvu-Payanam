@@ -9,7 +9,9 @@ import {
   FiArrowLeft, FiClock, FiZap, FiTarget, FiTrendingUp, FiAward, FiActivity, FiPlay, FiBookOpen
 } from 'react-icons/fi'
 
-const API = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+import { API_BASE_URL } from '../../../config/apiConfig'
+
+const API = API_BASE_URL
 const getToken = () => localStorage.getItem('studentToken')
 
 const COLORS = ['#0284c7', '#f59e0b', '#dc2626', '#7c3aed', '#059669']

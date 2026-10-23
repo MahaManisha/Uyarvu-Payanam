@@ -15,10 +15,10 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { io } from 'socket.io-client'
-import { useNotifications } from '../context/NotificationContext'
 import styles from './NotificationBell.module.css'
+import { SOCKET_BASE_URL } from '../../config/apiConfig'
 
-const SOCKET_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api\/?$/, '')
+const SOCKET_URL = SOCKET_BASE_URL
 
 const TYPE_META = {
     announcement: { icon: '📢', color: '#6c5ce7' },

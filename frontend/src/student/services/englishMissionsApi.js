@@ -5,11 +5,10 @@ import axios from 'axios'
 // validated server-side; the AI assessment set is generated server-side and
 // the answer key is never returned to the browser until after submission.
 
+import { API_BASE_URL } from '../../config/apiConfig'
+
 const emApi = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_URL ||
-    import.meta.env.VITE_API_BASE_URL ||
-    'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
   timeout: 15000,
 })
 

@@ -19,11 +19,13 @@ import {
   seedDiscoverProgress,
 } from './class5SeedData'
 
+import { API_BASE_URL } from '../../config/apiConfig'
+
 // Dedicated instance WITHOUT the 401-redirect interceptor used by studentApi:
 // if the student is not logged in (demo/browse mode) we gracefully fall back
 // to the seeded mock data instead of hard-redirecting to /student/signin.
 const c5Api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
   timeout: 8000,
 })
 
@@ -244,7 +246,7 @@ export const getBadges = () => call('/class5/badges', seedBadgesShelf)
 export const getCertificates = () => call('/class5/certificates', seedCertificates)
 
 export const getCertificatePdfUrl = (certId) =>
-  `${import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/class5/certificates/${encodeURIComponent(certId)}/pdf`
+  `${API_BASE_URL}/class5/certificates/${encodeURIComponent(certId)}/pdf`
 
 export async function generateBadgeCertificate(badgeKey) {
   const student = getStudent()

@@ -7,8 +7,10 @@ import { SEED_WORLDS } from '../data/scienceWorldThemes'
 // student's account. The world list has a seed fallback so the (public)
 // Science Adventure hub renders offline — but there is NO offline gameplay.
 
+import { API_BASE_URL } from '../../config/apiConfig'
+
 const scienceApi = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
   timeout: 10000,
 })
 
