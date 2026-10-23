@@ -88,9 +88,9 @@ export function getCollegeFeatureEligibility(profile = {}) {
     skillGap: true,      // Universal
     performanceAnalytics: true, // Universal
 
-    // Domain specific
+    // Domain specific & Community
     isEngineering,
-    hackathonTeammates: isEngineering,
+    hackathonTeammates: true, // Universal for all college students (SIH, TNSI, college fests)
     codingArena: codingArenaEligible,
     codingChallenges: codingArenaEligible,
     technicalSkillGap: isTechDomain || isCoreEngineering || codingArenaEligible,
@@ -114,6 +114,7 @@ export function getCollegeFeatureEligibility(profile = {}) {
  */
 export function getDashboardWidgetPriority(profile = {}) {
   const flags = getCollegeFeatureEligibility(profile)
+  const isEngineering = flags.isEngineering
   const yearStr = norm(profile?.currentYear)
   const isFirstYear = yearStr.includes('1') || yearStr.includes('first')
   const isFinalYear = yearStr.includes('4') || yearStr.includes('final') || (yearStr.includes('3') && norm(profile?.degreeProgramme).includes('bca'))
@@ -144,21 +145,17 @@ export function getDashboardWidgetPriority(profile = {}) {
       priority: 90,
       badge: 'Skill Match',
       to: '/college/community/mentors'
+    },
+    {
+      id: 'hackathon-teammates',
+      title: 'Hackathon Teammate Finder',
+      subtitle: 'Find complementary peers for SIH, Mini Projects & Tech Fests',
+      category: 'community',
+      priority: isEngineering ? 97 : 88,
+      badge: 'Squad Finder',
+      to: '/college/teammate-matchmaker'
     }
   ]
-
-  // Add Domain-Specific High Priority Cards
-  if (flags.hackathonTeammates) {
-    widgets.push({
-      id: 'hackathon-teammates',
-      title: 'Hackathon & Project Matchmaker',
-      subtitle: 'Find complementary peers for SIH, Mini Projects & Tech Fests',
-      category: 'engineering',
-      priority: 97,
-      badge: 'Engineering Hub',
-      to: '/college/teammate-matchmaker'
-    })
-  }
 
   if (flags.codingArena) {
     widgets.push({

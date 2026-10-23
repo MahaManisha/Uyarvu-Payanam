@@ -215,6 +215,13 @@ export default function TeammateMatchmakerPage() {
   }, [searchQuery])
 
   useEffect(() => {
+    const action = searchParams.get('action')
+    const tab = searchParams.get('tab')
+    if (action === 'post') setActiveTab('post')
+    else if (tab) setActiveTab(tab)
+  }, [searchParams])
+
+  useEffect(() => {
     if (activeTab === 'my-teams') {
       fetchMyTeams()
     }
@@ -355,13 +362,24 @@ export default function TeammateMatchmakerPage() {
 
   // Open Chat with Creator or Team
   const handleOpenChat = (listing) => {
-    navigate('/college/peer-chat', {
-      state: {
-        peerId: listing.creatorId,
-        peerName: listing.creatorName,
-        teamTitle: listing.title
-      }
-    })
+    if (listing.conversationId) {
+      navigate('/college/peer-chat', {
+        state: {
+          conversationId: listing.conversationId,
+          teamTitle: listing.title
+        }
+      })
+    } else if (listing.creatorId && listing.creatorId.toString() !== myId?.toString()) {
+      navigate('/college/peer-chat', {
+        state: {
+          peerId: listing.creatorId,
+          peerName: listing.creatorName,
+          teamTitle: listing.title
+        }
+      })
+    } else {
+      navigate('/college/peer-chat')
+    }
   }
 
   return (
@@ -388,13 +406,13 @@ export default function TeammateMatchmakerPage() {
               padding: '4px 12px', borderRadius: 16, fontSize: 11, fontWeight: 900,
               textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12
             }}>
-              <FiZap size={13} color="#fef08a" /> Engineering Innovation &amp; Project Hub
+              <FiZap size={13} color="#fef08a" /> College Hackathon &amp; Project Squad Hub
             </div>
             <h1 style={{ fontSize: 28, fontWeight: 900, margin: '0 0 8px', color: '#fff', fontFamily: theme.fontDisplay }}>
-              🚀 Hackathon &amp; Project Teammate Matchmaker
+              🚀 Hackathon Teammate Finder
             </h1>
             <p style={{ fontSize: 14, color: '#e0e7ff', margin: 0, lineHeight: 1.6, fontWeight: 500 }}>
-              Assemble complementary squads for <strong>Smart India Hackathon (SIH 2026)</strong>, Tamil Nadu State Innovation Challenges, College Symposiums, and Mini/Final-Year Engineering Projects. No more solo struggles—find your missing tech teammates.
+              Assemble complementary squads for <strong>Smart India Hackathon (SIH 2026)</strong>, Tamil Nadu State Innovation Challenges, College Symposiums, and Mini/Final-Year Projects. No more solo struggles—find your missing tech teammates.
             </p>
           </div>
 

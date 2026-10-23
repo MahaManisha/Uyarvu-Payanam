@@ -17,7 +17,6 @@ const GRADUATE_SIDEBAR_NAV = [
   { id: 'applications',     icon: FiTarget,        label: 'My Applications',     to: '/student/graduate/applications' },
   { id: 'resume-builder',   icon: FiFileText,      label: 'Resume Builder',      to: '/graduate/resume-builder' },
   { id: 'ats-checker',      icon: FiTrendingUp,    label: 'ATS Score Checker',   to: '/graduate/ats-checker' },
-  { id: 'roadmap',          icon: FiTarget,        label: 'Career Roadmap',      to: '/student/graduate/roadmap' },
   { id: 'higher-studies',   icon: FiAward,         label: 'Higher Studies',     to: '/student/graduate/higher-studies' },
   { id: 'peer-mentor',      icon: FiUsers,         label: 'Peer Mentorship',     to: '/graduate/peer-mentor' },
   { id: 'advisor',          icon: FiMessageSquare, label: 'AI Advisor',          to: '/student/graduate/advisor' },
