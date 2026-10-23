@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { SBtn, SInput, SSelect, SAlert, SCard, SBadge } from '../../components/ui'
+import { SBtn, SInput, SSelect, SAlert, SCard, SBadge } from '../../components/UI'
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiCheck, FiX, FiArrowUp, FiArrowDown } from 'react-icons/fi'
 import axiosInstance from '../../../config/axios'
 

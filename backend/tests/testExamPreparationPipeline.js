@@ -1,5 +1,5 @@
 const { DEFAULT_EXAMS } = require("../services/ExamResearchService");
-const { generatePersonalizedStudyPlan } = require("../services/StudyPlanEngine");
+const { generatePersonalizedStudyPlan } = require("../services/studyPlanEngine");
 const { calculateTopicPriority } = require("../services/ExamTopicPriorityService");
 const { calculateExamReadiness } = require("../services/ExamReadinessService");
 const { normalizeTopicName } = require("../services/SyllabusNormalizationService");

@@ -2,7 +2,7 @@ const Exam = require("../models/Exam");
 const ExamStudyPlan = require("../models/ExamStudyPlan");
 const GraduateProfile = require("../models/GraduateProfile");
 const { seedDefaultExams, triggerTavilyExamResearch } = require("../services/ExamResearchService");
-const { generatePersonalizedStudyPlan } = require("../services/StudyPlanEngine");
+const { generatePersonalizedStudyPlan } = require("../services/studyPlanEngine");
 const { calculateExamReadiness } = require("../services/ExamReadinessService");
 const { calculateTopicPriority } = require("../services/ExamTopicPriorityService");
 
